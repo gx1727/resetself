@@ -229,17 +229,9 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                       ),
                       const SizedBox(height: 20),
                       if (samples.isEmpty)
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              _emptyStateText(_selectedFilter),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: const Color(0xFF8E8E93),
-                                height: 1.7,
-                              ),
-                            ),
-                          ),
+                        _InsightEmptyStateCard(
+                          filter: _selectedFilter,
+                          onTap: () => context.go(_emptyStateAction(_selectedFilter).route),
                         )
                       else
                         for (final (index, sample) in samples.indexed) ...[
@@ -315,6 +307,61 @@ String _emptyStateText(SampleFilter filter) {
     case SampleFilter.vacuumFocus:
       return '最近 7 天还没有专注完成样本，先完成一段安静区也会被记录在这里。';
   }
+}
+
+class _InsightEmptyStateCard extends StatelessWidget {
+  const _InsightEmptyStateCard({
+    required this.filter,
+    required this.onTap,
+  });
+
+  final SampleFilter filter;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final action = _emptyStateAction(filter);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _emptyStateText(filter),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: const Color(0xFF8E8E93),
+                height: 1.7,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: onTap,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(action.label),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, size: 18),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyStateAction {
+  const _EmptyStateAction({
+    required this.label,
+    required this.route,
+  });
+
+  final String label;
+  final String route;
 }
 
 class _InsightCard extends StatelessWidget {
@@ -1016,6 +1063,36 @@ _FilterContextConfig _filterContextConfig(
         backgroundColor: const Color(0xFFF6FAF7),
         borderColor: const Color(0xFFDDECE3),
         badgeColor: const Color(0xFFE8F0EC),
+      );
+  }
+}
+
+_EmptyStateAction _emptyStateAction(SampleFilter filter) {
+  switch (filter) {
+    case SampleFilter.all:
+      return const _EmptyStateAction(
+        label: '回首页继续最小动作',
+        route: AppRoutes.home,
+      );
+    case SampleFilter.dailyDeviation:
+      return const _EmptyStateAction(
+        label: '回首页做今日校验',
+        route: AppRoutes.dailyCheckin,
+      );
+    case SampleFilter.sos:
+      return const _EmptyStateAction(
+        label: '先进入一段真空专注',
+        route: AppRoutes.vacuumFocus,
+      );
+    case SampleFilter.restructure:
+      return const _EmptyStateAction(
+        label: '回到 24h 重构',
+        route: AppRoutes.restructureSetup,
+      );
+    case SampleFilter.vacuumFocus:
+      return const _EmptyStateAction(
+        label: '开始一段真空专注',
+        route: AppRoutes.vacuumFocus,
       );
   }
 }
