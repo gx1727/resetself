@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
 import '../../../app/state/app_controller.dart';
+import '../../../data/database/database_providers.dart';
+import '../../../data/models/vacuum_focus_state.dart';
 import '../../../data/models/vacuum_mode_settings.dart';
 import '../application/vacuum_mode_providers.dart';
 
@@ -13,6 +15,7 @@ class VacuumFocusPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(vacuumModeSettingsProvider);
+    final focusStateAsync = ref.watch(vacuumFocusStateProvider);
     final hasCompletedInitialRestructure =
         ref.watch(appControllerProvider).hasCompletedInitialRestructure;
 
@@ -63,69 +66,122 @@ class VacuumFocusPage extends ConsumerWidget {
               ),
             ),
           ),
-          data: (settings) => SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconButton(
-                  onPressed: () => context.pop(),
-                  icon: const Icon(
-                    Icons.chevron_left_rounded,
-                    color: Color(0xFF8E8E93),
-                    size: 28,
+          data: (settings) => focusStateAsync.when(
+            loading: () => const Center(
+              child: Text(
+                '正在读取当前专注状态...',
+                style: TextStyle(color: Color(0xFF8E8E93)),
+              ),
+            ),
+            error: (error, stackTrace) => const Center(
+              child: Text(
+                '专注状态暂时没有完全展开。',
+                style: TextStyle(color: Color(0xFF8E8E93)),
+              ),
+            ),
+            data: (focusState) => SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: Color(0xFF8E8E93),
+                      size: 28,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '专注进行中',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: const Color(0xFFE5E5EA),
-                    fontWeight: FontWeight.w700,
+                  const SizedBox(height: 8),
+                  Text(
+                    focusState.isActive ? '专注进行中' : '准备开始专注',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: const Color(0xFFE5E5EA),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '从现在开始，先把无关输入留在外面。这里只保留这一段 ${settings.focusWindowMinutes} 分钟的安静、提醒节奏和你接下来要做的那一件事。',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: const Color(0xFFAFAFB4),
-                    height: 1.7,
+                  const SizedBox(height: 12),
+                  Text(
+                    focusState.isActive
+                        ? '你已经进入这一段安静区。接下来只保留当前动作，不和旧惯性拉扯。'
+                        : '从这里开始进入一段真正安静的时间。按下开始后，首页和这里都会同步显示当前专注状态。',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: const Color(0xFFAFAFB4),
+                      height: 1.7,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                _FocusHeroCard(settings: settings),
-                const SizedBox(height: 16),
-                _FocusActionCard(settings: settings),
-                const SizedBox(height: 16),
-                _FocusChecklistCard(settings: settings),
-                const SizedBox(height: 16),
-                _FocusNoteCard(
-                  hasCompletedInitialRestructure: hasCompletedInitialRestructure,
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () => context.go(AppRoutes.restructureSetup),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('继续进入 24h 重构'),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_rounded, size: 18),
-                    ],
+                  const SizedBox(height: 24),
+                  _FocusHeroCard(
+                    settings: settings,
+                    focusState: focusState,
                   ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () => context.go(
-                    hasCompletedInitialRestructure
-                        ? AppRoutes.home
-                        : AppRoutes.vacuumMode,
+                  const SizedBox(height: 16),
+                  _FocusActionCard(
+                    settings: settings,
+                    focusState: focusState,
                   ),
-                  child: Text(
-                    hasCompletedInitialRestructure ? '先回首页' : '回到真空准备区',
+                  const SizedBox(height: 16),
+                  _FocusChecklistCard(
+                    settings: settings,
+                    focusState: focusState,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  _FocusNoteCard(
+                    hasCompletedInitialRestructure: hasCompletedInitialRestructure,
+                    focusState: focusState,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: () async {
+                      final repository = ref.read(userProfileRepositoryProvider);
+                      if (focusState.isActive) {
+                        await repository.stopVacuumFocus();
+                      } else {
+                        await repository.startVacuumFocus(settings);
+                      }
+                      ref.invalidate(vacuumFocusStateProvider);
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(focusState.isActive ? '结束这段专注' : '开始这段专注'),
+                        const SizedBox(width: 8),
+                        Icon(
+                          focusState.isActive
+                              ? Icons.pause_circle_outline_rounded
+                              : Icons.play_circle_outline_rounded,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (!focusState.isActive) ...[
+                    OutlinedButton(
+                      onPressed: () => context.go(AppRoutes.restructureSetup),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('继续进入 24h 重构'),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_rounded, size: 18),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  OutlinedButton(
+                    onPressed: () => context.go(
+                      hasCompletedInitialRestructure
+                          ? AppRoutes.home
+                          : AppRoutes.vacuumMode,
+                    ),
+                    child: Text(
+                      hasCompletedInitialRestructure ? '先回首页' : '回到真空准备区',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -135,9 +191,13 @@ class VacuumFocusPage extends ConsumerWidget {
 }
 
 class _FocusHeroCard extends StatelessWidget {
-  const _FocusHeroCard({required this.settings});
+  const _FocusHeroCard({
+    required this.settings,
+    required this.focusState,
+  });
 
   final VacuumModeSettings settings;
+  final VacuumFocusState focusState;
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +228,9 @@ class _FocusHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            '${settings.focusWindowMinutes} 分钟安静区',
+            focusState.isActive
+                ? _focusHeroTitle(settings, focusState)
+                : '${settings.focusWindowMinutes} 分钟安静区',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: const Color(0xFFE5E5EA),
               fontWeight: FontWeight.w700,
@@ -176,7 +238,9 @@ class _FocusHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '提醒时间 ${settings.reminderTime} · ${settings.focusRhythmLabel}',
+            focusState.isActive
+                ? _focusHeroSubtitle(settings, focusState)
+                : '提醒时间 ${settings.reminderTime} · ${settings.focusRhythmLabel}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: const Color(0xFFAFAFB4),
               height: 1.6,
@@ -189,9 +253,13 @@ class _FocusHeroCard extends StatelessWidget {
 }
 
 class _FocusActionCard extends StatelessWidget {
-  const _FocusActionCard({required this.settings});
+  const _FocusActionCard({
+    required this.settings,
+    required this.focusState,
+  });
 
   final VacuumModeSettings settings;
+  final VacuumFocusState focusState;
 
   @override
   Widget build(BuildContext context) {
@@ -215,10 +283,14 @@ class _FocusActionCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _FocusPill(
-            label: settings.noiseCutEnabled ? '降噪已开启' : '手动降噪中',
-            summary: settings.noiseCutEnabled
-                ? '优先把消息、短视频和无关标签页留在外面'
-                : '至少先关掉最容易把你拉走的一个入口',
+            label: focusState.isActive
+                ? '当前状态已开始'
+                : (settings.noiseCutEnabled ? '降噪已开启' : '手动降噪中'),
+            summary: focusState.isActive
+                ? '首页和专注页现在会同步显示这一段专注是否正在进行。'
+                : (settings.noiseCutEnabled
+                    ? '优先把消息、短视频和无关标签页留在外面'
+                    : '至少先关掉最容易把你拉走的一个入口'),
           ),
           const SizedBox(height: 10),
           _FocusPill(
@@ -234,14 +306,20 @@ class _FocusActionCard extends StatelessWidget {
 }
 
 class _FocusChecklistCard extends StatelessWidget {
-  const _FocusChecklistCard({required this.settings});
+  const _FocusChecklistCard({
+    required this.settings,
+    required this.focusState,
+  });
 
   final VacuumModeSettings settings;
+  final VacuumFocusState focusState;
 
   @override
   Widget build(BuildContext context) {
     final items = [
-      '接下来 ${settings.focusWindowMinutes} 分钟内，不处理社交消息和碎片输入',
+      focusState.isActive
+          ? '这一段专注已经开始，接下来只处理当前动作，不切到别的入口'
+          : '接下来 ${settings.focusWindowMinutes} 分钟内，不处理社交消息和碎片输入',
       settings.noiseCutEnabled
           ? '保持降噪状态，只留下当前任务需要的 1 个窗口或 1 个工具'
           : '先把最容易分心的应用关掉，再继续当前动作',
@@ -304,9 +382,11 @@ class _FocusChecklistCard extends StatelessWidget {
 class _FocusNoteCard extends StatelessWidget {
   const _FocusNoteCard({
     required this.hasCompletedInitialRestructure,
+    required this.focusState,
   });
 
   final bool hasCompletedInitialRestructure;
+  final VacuumFocusState focusState;
 
   @override
   Widget build(BuildContext context) {
@@ -319,9 +399,11 @@ class _FocusNoteCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFF2D3135)),
       ),
       child: Text(
-        hasCompletedInitialRestructure
-            ? '这一页先作为真空状态页使用。后续会继续接入系统级降噪、提醒与首页回流。'
-            : '这一页先把你带进安静区，下一步就可以继续完成首次 24h 身份重构。',
+        focusState.isActive
+            ? '这段专注结束后，首页会回到未开始状态，你可以再决定是否进入下一段。'
+            : (hasCompletedInitialRestructure
+                ? '这一页已经和首页联动。开始后，你会在首页看到当前真空节奏正在进行。'
+                : '这一页会先把你带进安静区，开始后也会同步回到首页状态。'),
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: const Color(0xFF8E8E93),
           height: 1.7,
@@ -372,4 +454,36 @@ class _FocusPill extends StatelessWidget {
       ),
     );
   }
+}
+
+String _focusHeroTitle(
+  VacuumModeSettings settings,
+  VacuumFocusState focusState,
+) {
+  final remainingMinutes = focusState.remainingMinutes;
+  if (remainingMinutes == null) {
+    return '${settings.focusWindowMinutes} 分钟安静区';
+  }
+
+  if (remainingMinutes == 0) {
+    return '这段专注已到结束时间';
+  }
+
+  return '预计还有 $remainingMinutes 分钟';
+}
+
+String _focusHeroSubtitle(
+  VacuumModeSettings settings,
+  VacuumFocusState focusState,
+) {
+  final startLabel = focusState.startedAt == null
+      ? '刚刚开始'
+      : '开始于 ${_formatTimeOnly(focusState.startedAt!)}';
+  return '$startLabel · ${settings.focusRhythmLabel}';
+}
+
+String _formatTimeOnly(DateTime value) {
+  final hour = value.hour.toString().padLeft(2, '0');
+  final minute = value.minute.toString().padLeft(2, '0');
+  return '$hour:$minute';
 }

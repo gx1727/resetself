@@ -9,6 +9,7 @@ import '../models/insight_trend_summary.dart';
 import '../models/inertia_sample.dart';
 import '../models/restructure_draft.dart';
 import '../models/user_profile.dart';
+import '../models/vacuum_focus_state.dart';
 import '../models/vacuum_mode_settings.dart';
 import '../models/weekly_review_summary.dart';
 
@@ -89,6 +90,84 @@ class UserProfileRepository {
       settings.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  Future<VacuumFocusState> getVacuumFocusState() async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'vacuum_focus_state',
+      where: 'id = ?',
+      whereArgs: const [1],
+      limit: 1,
+    );
+
+    if (rows.isEmpty) {
+      return VacuumFocusState.inactive();
+    }
+
+    return VacuumFocusState.fromMap(rows.first);
+  }
+
+  Future<void> startVacuumFocus(VacuumModeSettings settings) async {
+    final db = await _database.database;
+    final currentState = await getVacuumFocusState();
+    final now = DateTime.now();
+
+    await db.insert(
+      'vacuum_focus_state',
+      VacuumFocusState(
+        isActive: true,
+        startedAt: now,
+        plannedEndAt: now.add(
+          Duration(minutes: settings.focusWindowMinutes),
+        ),
+        lastEndedAt: currentState.lastEndedAt,
+      ).toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> stopVacuumFocus() async {
+    final db = await _database.database;
+    final currentState = await getVacuumFocusState();
+    final now = DateTime.now();
+
+    await db.transaction((txn) async {
+      if (currentState.isActive) {
+        final rows = await txn.query(
+          'user_profile',
+          where: 'id = ?',
+          whereArgs: const [1],
+          limit: 1,
+        );
+        final minAction = rows.isEmpty
+            ? ''
+            : rows.first['today_min_action'] as String? ?? '';
+        final actualMinutes = currentState.startedAt == null
+            ? null
+            : now.difference(currentState.startedAt!).inMinutes.clamp(1, 999);
+        final focusSummary = actualMinutes == null
+            ? '完成了一段真空专注。'
+            : '完成了一段 $actualMinutes 分钟真空专注。';
+        final returnSummary = minAction.trim().isEmpty
+            ? '现在回到今天这一个动作。'
+            : '现在回到：${minAction.trim()}';
+
+        await txn.insert('inertia_sample', {
+          'source_type': 'vacuum_focus',
+          'status_tag': '专注完成',
+          'content': '$focusSummary$returnSummary',
+        });
+      }
+
+      await txn.insert(
+        'vacuum_focus_state',
+        VacuumFocusState.inactive(
+          lastEndedAt: currentState.isActive ? now : currentState.lastEndedAt,
+        ).toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    });
   }
 
   Future<void> saveRestructureDraft(RestructureDraft draft) async {
@@ -436,6 +515,11 @@ class UserProfileRepository {
 
       await txn.update('restructure_record', {'is_latest': 0});
       await txn.delete('restructure_draft', where: 'id = ?', whereArgs: const [1]);
+      await txn.delete(
+        'vacuum_focus_state',
+        where: 'id = ?',
+        whereArgs: const [1],
+      );
     });
   }
 

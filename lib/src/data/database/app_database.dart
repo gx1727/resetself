@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
   static const dbName = 'resetself_v1.db';
-  static const dbVersion = 3;
+  static const dbVersion = 4;
 
   Database? _database;
   String? _databasePath;
@@ -155,6 +155,7 @@ class AppDatabase {
 
     await _createDraftTable(db);
     await _createVacuumSettingsTable(db);
+    await _createVacuumFocusStateTable(db);
   }
 
   Future<void> _migrateSchema(
@@ -168,6 +169,10 @@ class AppDatabase {
 
     if (oldVersion < 3 && newVersion >= 3) {
       await _createVacuumSettingsTable(db);
+    }
+
+    if (oldVersion < 4 && newVersion >= 4) {
+      await _createVacuumFocusStateTable(db);
     }
   }
 
@@ -194,6 +199,19 @@ class AppDatabase {
         gentle_reminder_enabled INTEGER NOT NULL DEFAULT 1,
         reminder_time TEXT NOT NULL DEFAULT '21:30',
         focus_rhythm_label TEXT NOT NULL DEFAULT '每晚一次温和提醒',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+  }
+
+  Future<void> _createVacuumFocusStateTable(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS vacuum_focus_state (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        is_active INTEGER NOT NULL DEFAULT 0,
+        started_at TEXT,
+        planned_end_at TEXT,
+        last_ended_at TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     ''');

@@ -7,6 +7,7 @@ import '../../../app/state/app_controller.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/daily_checkin.dart';
 import '../../../data/models/inertia_sample.dart';
+import '../../../data/models/vacuum_focus_state.dart';
 import '../../../data/models/vacuum_mode_settings.dart';
 import '../../../data/models/weekly_review_summary.dart';
 import '../../vacuum/application/vacuum_mode_providers.dart';
@@ -39,6 +40,7 @@ class HomePage extends ConsumerWidget {
     final latestSampleAsync = ref.watch(latestSampleProvider);
     final weeklyReviewAsync = ref.watch(homeWeeklyReviewProvider);
     final vacuumSettingsAsync = ref.watch(vacuumModeSettingsProvider);
+    final vacuumFocusStateAsync = ref.watch(vacuumFocusStateProvider);
 
     final identityText = profile.identityText.isEmpty
         ? '“我是一个\n看重长远价值的人”'
@@ -414,9 +416,25 @@ class HomePage extends ConsumerWidget {
                         ),
                         const SizedBox(height: 16),
                         vacuumSettingsAsync.when(
-                          data: (settings) => _VacuumRhythmCard(
-                            settings: settings,
-                            onTap: () => context.go(AppRoutes.vacuumFocus),
+                          data: (settings) => vacuumFocusStateAsync.when(
+                            data: (focusState) => _VacuumRhythmCard(
+                              settings: settings,
+                              focusState: focusState,
+                              minAction: minAction,
+                              onTap: () => context.go(AppRoutes.vacuumFocus),
+                              onToggleFocus: () async {
+                                final repository =
+                                    ref.read(userProfileRepositoryProvider);
+                                if (focusState.isActive) {
+                                  await repository.stopVacuumFocus();
+                                } else {
+                                  await repository.startVacuumFocus(settings);
+                                }
+                                ref.invalidate(vacuumFocusStateProvider);
+                              },
+                            ),
+                            loading: () => const SizedBox.shrink(),
+                            error: (error, stackTrace) => const SizedBox.shrink(),
                           ),
                           loading: () => const SizedBox.shrink(),
                           error: (error, stackTrace) => const SizedBox.shrink(),
@@ -554,6 +572,8 @@ String _sampleSourceLabel(String sourceType) {
       return '每日偏离';
     case 'manual':
       return '首次重构';
+    case 'vacuum_focus':
+      return '真空专注';
     default:
       return '惯性样本';
   }
@@ -583,6 +603,8 @@ IconData _sampleSourceIcon(String sourceType) {
       return Icons.auto_graph_rounded;
     case 'manual':
       return Icons.self_improvement_outlined;
+    case 'vacuum_focus':
+      return Icons.air_rounded;
     default:
       return Icons.eco_outlined;
   }
@@ -608,11 +630,17 @@ String _formatSampleTime(DateTime value) {
 class _VacuumRhythmCard extends StatelessWidget {
   const _VacuumRhythmCard({
     required this.settings,
+    required this.focusState,
+    required this.minAction,
     required this.onTap,
+    required this.onToggleFocus,
   });
 
   final VacuumModeSettings settings;
+  final VacuumFocusState focusState;
+  final String minAction;
   final VoidCallback onTap;
+  final Future<void> Function() onToggleFocus;
 
   @override
   Widget build(BuildContext context) {
@@ -641,7 +669,9 @@ class _VacuumRhythmCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${settings.focusWindowMinutes} 分钟安静区',
+                    focusState.isActive
+                        ? '专注进行中'
+                        : '${settings.focusWindowMinutes} 分钟安静区',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: const Color(0xFFF7F7F5),
                       fontWeight: FontWeight.w700,
@@ -649,7 +679,7 @@ class _VacuumRhythmCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _vacuumSummary(settings),
+                    _vacuumSummary(settings, focusState, minAction),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: const Color(0xFFD5DDD8),
                       height: 1.5,
@@ -668,7 +698,20 @@ class _VacuumRhythmCard extends StatelessWidget {
                             ? '温和提醒'
                             : '无提醒',
                       ),
+                      if (_shouldShowVacuumReturnPrompt(focusState))
+                        _VacuumTag(label: '已完成上一段专注'),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.tonal(
+                    onPressed: onToggleFocus,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0x1AF7F7F5),
+                      foregroundColor: const Color(0xFFF7F7F5),
+                    ),
+                    child: Text(
+                      focusState.isActive ? '结束这段专注' : '从首页开始专注',
+                    ),
                   ),
                 ],
               ),
@@ -710,11 +753,38 @@ class _VacuumTag extends StatelessWidget {
   }
 }
 
-String _vacuumSummary(VacuumModeSettings settings) {
+String _vacuumSummary(
+  VacuumModeSettings settings,
+  VacuumFocusState focusState,
+  String minAction,
+) {
+  if (focusState.isActive) {
+    final remainingMinutes = focusState.remainingMinutes;
+    final remainingText = remainingMinutes == null
+        ? '正在进行'
+        : remainingMinutes == 0
+            ? '这一段已到结束时间'
+            : '预计还有 $remainingMinutes 分钟';
+    return '$remainingText · ${settings.focusRhythmLabel}';
+  }
+
+  if (_shouldShowVacuumReturnPrompt(focusState)) {
+    return '上一段专注已经结束。现在只回到这一个动作：$minAction';
+  }
+
   final reminderPart = settings.gentleReminderEnabled
       ? '${settings.reminderTime} 提醒'
       : '不启用提醒';
   final noisePart = settings.noiseCutEnabled ? '先隔离碎片输入' : '手动保持安静区';
 
   return '$reminderPart · ${settings.focusRhythmLabel} · $noisePart';
+}
+
+bool _shouldShowVacuumReturnPrompt(VacuumFocusState focusState) {
+  final endedAt = focusState.lastEndedAt;
+  if (focusState.isActive || endedAt == null) {
+    return false;
+  }
+
+  return DateTime.now().difference(endedAt).inMinutes <= 180;
 }
