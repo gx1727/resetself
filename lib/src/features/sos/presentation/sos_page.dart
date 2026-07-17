@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/navigation/app_routes.dart';
 import '../../../app/state/app_controller.dart';
 import '../../../data/database/database_providers.dart';
+import '../../home/application/home_providers.dart';
 
 class SosPage extends ConsumerStatefulWidget {
   const SosPage({super.key});
@@ -31,6 +32,7 @@ class _SosPageState extends ConsumerState<SosPage> {
 
     try {
       await ref.read(userProfileRepositoryProvider).saveSosSample(label);
+      invalidateHomeSurface(ref);
       if (!mounted) {
         return;
       }

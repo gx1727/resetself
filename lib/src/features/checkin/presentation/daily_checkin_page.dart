@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/navigation/app_routes.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/checkin_status.dart';
+import '../../home/application/home_providers.dart';
 
 class DailyCheckinPage extends ConsumerStatefulWidget {
   const DailyCheckinPage({super.key});
@@ -30,6 +31,7 @@ class _DailyCheckinPageState extends ConsumerState<DailyCheckinPage> {
 
     try {
       await ref.read(userProfileRepositoryProvider).saveDailyCheckin(status);
+      invalidateHomeSurface(ref);
       if (!mounted) {
         return;
       }

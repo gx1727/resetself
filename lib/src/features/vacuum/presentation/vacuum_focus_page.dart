@@ -7,6 +7,7 @@ import '../../../app/state/app_controller.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/vacuum_focus_state.dart';
 import '../../../data/models/vacuum_mode_settings.dart';
+import '../../home/application/home_providers.dart';
 import '../application/vacuum_mode_providers.dart';
 
 class VacuumFocusPage extends ConsumerWidget {
@@ -139,7 +140,7 @@ class VacuumFocusPage extends ConsumerWidget {
                       } else {
                         await repository.startVacuumFocus(settings);
                       }
-                      ref.invalidate(vacuumFocusStateProvider);
+                      invalidateHomeSurface(ref);
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,

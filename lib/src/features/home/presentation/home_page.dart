@@ -10,24 +10,8 @@ import '../../../data/models/inertia_sample.dart';
 import '../../../data/models/vacuum_focus_state.dart';
 import '../../../data/models/vacuum_mode_settings.dart';
 import '../../../data/models/weekly_review_summary.dart';
+import '../application/home_providers.dart';
 import '../../vacuum/application/vacuum_mode_providers.dart';
-
-final todayCheckinProvider = FutureProvider.autoDispose<DailyCheckin?>((ref) {
-  return ref.watch(userProfileRepositoryProvider).getTodayCheckin();
-});
-
-final recentSampleCountProvider = FutureProvider.autoDispose<int>((ref) {
-  return ref.watch(userProfileRepositoryProvider).getRecentSampleCount();
-});
-
-final latestSampleProvider = FutureProvider.autoDispose<InertiaSample?>((ref) {
-  return ref.watch(userProfileRepositoryProvider).getLatestSample();
-});
-
-final homeWeeklyReviewProvider =
-    FutureProvider.autoDispose<WeeklyReviewSummary>((ref) {
-  return ref.watch(userProfileRepositoryProvider).getWeeklyReviewSummary();
-});
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -415,6 +399,37 @@ class HomePage extends ConsumerWidget {
                           error: (error, stackTrace) => const SizedBox.shrink(),
                         ),
                         const SizedBox(height: 16),
+                        weeklyReviewAsync.when(
+                          data: (summary) => _HomePositiveSignalCard(
+                            summary: summary,
+                            onTap: () => context.go(AppRoutes.insights),
+                          ),
+                          loading: () => const SizedBox.shrink(),
+                          error: (error, stackTrace) => const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: 16),
+                        weeklyReviewAsync.when(
+                          data: (summary) => vacuumFocusStateAsync.when(
+                            data: (focusState) {
+                              final suggestion = _buildHomeSuggestion(
+                                todayCheckin: todayCheckin,
+                                latestSample: latestSample,
+                                focusState: focusState,
+                                summary: summary,
+                                minAction: minAction,
+                              );
+                              return _HomeSmartSuggestionCard(
+                                suggestion: suggestion,
+                                onTap: () => context.go(suggestion.route),
+                              );
+                            },
+                            loading: () => const SizedBox.shrink(),
+                            error: (error, stackTrace) => const SizedBox.shrink(),
+                          ),
+                          loading: () => const SizedBox.shrink(),
+                          error: (error, stackTrace) => const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: 16),
                         vacuumSettingsAsync.when(
                           data: (settings) => vacuumFocusStateAsync.when(
                             data: (focusState) => _VacuumRhythmCard(
@@ -430,7 +445,7 @@ class HomePage extends ConsumerWidget {
                                 } else {
                                   await repository.startVacuumFocus(settings);
                                 }
-                                ref.invalidate(vacuumFocusStateProvider);
+                                invalidateHomeSurface(ref);
                               },
                             ),
                             loading: () => const SizedBox.shrink(),
@@ -728,6 +743,204 @@ class _VacuumRhythmCard extends StatelessWidget {
   }
 }
 
+class _HomePositiveSignalCard extends StatelessWidget {
+  const _HomePositiveSignalCard({
+    required this.summary,
+    required this.onTap,
+  });
+
+  final WeeklyReviewSummary summary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (summary.vacuumFocusCount == 0 && summary.matchCount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF4F8FB),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFDDEAF2)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF2F7),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.air_rounded,
+                size: 18,
+                color: Color(0xFF6E8FA3),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '本周正向回流',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: const Color(0xFF6E8FA3),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    summary.positiveSignalTitle,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: const Color(0xFF2D2D2D),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    summary.positiveSignalBody,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF5B5B5B),
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Color(0xFF8E8E93),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeSmartSuggestionCard extends StatelessWidget {
+  const _HomeSmartSuggestionCard({
+    required this.suggestion,
+    required this.onTap,
+  });
+
+  final _HomeSuggestion suggestion;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: suggestion.backgroundColor,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: suggestion.borderColor),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: suggestion.badgeColor,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                suggestion.icon,
+                size: 18,
+                color: suggestion.accentColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '现在先做这个',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: suggestion.accentColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    suggestion.title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: const Color(0xFF2D2D2D),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    suggestion.body,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF5B5B5B),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.tonal(
+                    onPressed: onTap,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: suggestion.badgeColor,
+                      foregroundColor: suggestion.accentColor,
+                    ),
+                    child: Text(suggestion.actionLabel),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeSuggestion {
+  const _HomeSuggestion({
+    required this.title,
+    required this.body,
+    required this.actionLabel,
+    required this.route,
+    required this.icon,
+    required this.accentColor,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.badgeColor,
+  });
+
+  final String title;
+  final String body;
+  final String actionLabel;
+  final String route;
+  final IconData icon;
+  final Color accentColor;
+  final Color backgroundColor;
+  final Color borderColor;
+  final Color badgeColor;
+}
+
 class _VacuumTag extends StatelessWidget {
   const _VacuumTag({required this.label});
 
@@ -787,4 +1000,117 @@ bool _shouldShowVacuumReturnPrompt(VacuumFocusState focusState) {
   }
 
   return DateTime.now().difference(endedAt).inMinutes <= 180;
+}
+
+_HomeSuggestion _buildHomeSuggestion({
+  required DailyCheckin? todayCheckin,
+  required InertiaSample? latestSample,
+  required VacuumFocusState focusState,
+  required WeeklyReviewSummary summary,
+  required String minAction,
+}) {
+  if (focusState.isActive) {
+    final remainingMinutes = focusState.remainingMinutes;
+    final remainingText = remainingMinutes == null
+        ? '这一段专注已经开始，先别切走。'
+        : remainingMinutes == 0
+            ? '这段专注已经到点，可以收尾后回到今天的动作。'
+            : '预计还有 $remainingMinutes 分钟，先把这一段安静区走完。';
+    return const _HomeSuggestion(
+      title: '先完成这段专注',
+      body: '',
+      actionLabel: '回到专注页',
+      route: AppRoutes.vacuumFocus,
+      icon: Icons.air_rounded,
+      accentColor: Color(0xFF6E8FA3),
+      backgroundColor: Color(0xFFF4F8FB),
+      borderColor: Color(0xFFDDEAF2),
+      badgeColor: Color(0xFFEAF2F7),
+    ).copyWith(body: remainingText);
+  }
+
+  if (todayCheckin == null) {
+    final hint = _shouldShowVacuumReturnPrompt(focusState)
+        ? '你刚结束一段专注，先用一次温和校验把今天的状态记下来。'
+        : '先做一次轻量校准，再决定今天接下来怎么走。';
+    return _HomeSuggestion(
+      title: '先完成今日校验',
+      body: hint,
+      actionLabel: '去做校验',
+      route: AppRoutes.dailyCheckin,
+      icon: Icons.check_circle_outline_rounded,
+      accentColor: const Color(0xFF819B8E),
+      backgroundColor: const Color(0xFFF4FAF6),
+      borderColor: const Color(0xFFDDECE3),
+      badgeColor: const Color(0xFFE8F0EC),
+    );
+  }
+
+  if (latestSample != null &&
+      (latestSample.sourceType == 'sos' ||
+          latestSample.sourceType == 'daily_checkin')) {
+    return _HomeSuggestion(
+      title: '先进入一段真空专注',
+      body: '最近一次样本还带着拉扯感。先给自己一段安静区，再回到今天这一个动作：$minAction',
+      actionLabel: '开始专注',
+      route: AppRoutes.vacuumFocus,
+      icon: Icons.air_rounded,
+      accentColor: const Color(0xFF6E8FA3),
+      backgroundColor: const Color(0xFFF4F8FB),
+      borderColor: const Color(0xFFDDEAF2),
+      badgeColor: const Color(0xFFEAF2F7),
+    );
+  }
+
+  if (summary.vacuumFocusCount > 0 || summary.matchCount > 0) {
+    return _HomeSuggestion(
+      title: '把今天这一个动作做稳',
+      body: '这周已经出现 ${summary.vacuumFocusCount} 次真空专注、${summary.matchCount} 次完全匹配。现在继续：$minAction',
+      actionLabel: '查看本周回流',
+      route: AppRoutes.insights,
+      icon: Icons.trending_up_rounded,
+      accentColor: const Color(0xFF819B8E),
+      backgroundColor: const Color(0xFFF6FAF7),
+      borderColor: const Color(0xFFDDECE3),
+      badgeColor: const Color(0xFFE8F0EC),
+    );
+  }
+
+  return _HomeSuggestion(
+    title: '先开始一段安静区',
+    body: '如果还没想清楚今天从哪里开始，就先进入真空专注，让自己只面对眼前这一个动作。',
+    actionLabel: '进入真空专注',
+    route: AppRoutes.vacuumFocus,
+    icon: Icons.air_rounded,
+    accentColor: const Color(0xFF6E8FA3),
+    backgroundColor: const Color(0xFFF4F8FB),
+    borderColor: const Color(0xFFDDEAF2),
+    badgeColor: const Color(0xFFEAF2F7),
+  );
+}
+
+extension on _HomeSuggestion {
+  _HomeSuggestion copyWith({
+    String? title,
+    String? body,
+    String? actionLabel,
+    String? route,
+    IconData? icon,
+    Color? accentColor,
+    Color? backgroundColor,
+    Color? borderColor,
+    Color? badgeColor,
+  }) {
+    return _HomeSuggestion(
+      title: title ?? this.title,
+      body: body ?? this.body,
+      actionLabel: actionLabel ?? this.actionLabel,
+      route: route ?? this.route,
+      icon: icon ?? this.icon,
+      accentColor: accentColor ?? this.accentColor,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      borderColor: borderColor ?? this.borderColor,
+      badgeColor: badgeColor ?? this.badgeColor,
+    );
+  }
 }
