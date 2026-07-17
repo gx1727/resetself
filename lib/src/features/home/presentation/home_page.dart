@@ -1046,12 +1046,82 @@ _HomeSuggestion _buildHomeSuggestion({
     );
   }
 
-  if (latestSample != null &&
-      (latestSample.sourceType == 'sos' ||
-          latestSample.sourceType == 'daily_checkin')) {
+  if (latestSample case final sample? when sample.sourceType == 'sos') {
+    return _HomeSuggestion(
+      title: '先把自己带回安静区',
+      body: '刚刚那次 SOS 已经被接住了。现在不要急着证明什么，先进入一段真空专注，再回来做这个动作：$minAction',
+      actionLabel: '先去专注',
+      route: AppRoutes.vacuumFocus,
+      icon: Icons.air_rounded,
+      accentColor: const Color(0xFF6E8FA3),
+      backgroundColor: const Color(0xFFF4F8FB),
+      borderColor: const Color(0xFFDDEAF2),
+      badgeColor: const Color(0xFFEAF2F7),
+    );
+  }
+
+  if (latestSample case final sample?
+      when sample.sourceType == 'vacuum_focus' &&
+          _shouldShowVacuumReturnPrompt(focusState)) {
+    return _HomeSuggestion(
+      title: '现在直接回到最小动作',
+      body: '你刚完成一段真空专注，说明拉扯已经被放下来了。接下来不要扩张目标，只继续：$minAction',
+      actionLabel: '看回流记录',
+      route: AppRoutes.insights,
+      icon: Icons.playlist_add_check_circle_rounded,
+      accentColor: const Color(0xFF819B8E),
+      backgroundColor: const Color(0xFFF6FAF7),
+      borderColor: const Color(0xFFDDECE3),
+      badgeColor: const Color(0xFFE8F0EC),
+    );
+  }
+
+  if (todayCheckin.matchStatus == 'full_deviation') {
+    return _HomeSuggestion(
+      title: '先重启一段真空专注',
+      body: '今天已经出现明显偏离，先不要硬推自己。先回到安静区，再回来只做最小动作：$minAction',
+      actionLabel: '重启专注',
+      route: AppRoutes.vacuumFocus,
+      icon: Icons.restart_alt_rounded,
+      accentColor: const Color(0xFF6E8FA3),
+      backgroundColor: const Color(0xFFF4F8FB),
+      borderColor: const Color(0xFFDDEAF2),
+      badgeColor: const Color(0xFFEAF2F7),
+    );
+  }
+
+  if (todayCheckin.matchStatus == 'partial') {
+    return _HomeSuggestion(
+      title: '先把动作收小，再继续',
+      body: '今天有一点被旧习惯拉走了，但不用补偿。先只做这一件小事：$minAction',
+      actionLabel: '看偏离记录',
+      route: AppRoutes.insights,
+      icon: Icons.adjust_rounded,
+      accentColor: const Color(0xFFC2A878),
+      backgroundColor: const Color(0xFFFCF8F1),
+      borderColor: const Color(0xFFF0E5CF),
+      badgeColor: const Color(0xFFF9F5EC),
+    );
+  }
+
+  if (todayCheckin.matchStatus == 'match') {
+    return _HomeSuggestion(
+      title: '保持今天这条新轨道',
+      body: '今天已经完成一次完全匹配，不需要再额外加码。继续把这一个动作做稳：$minAction',
+      actionLabel: '看本周回流',
+      route: AppRoutes.insights,
+      icon: Icons.trending_up_rounded,
+      accentColor: const Color(0xFF819B8E),
+      backgroundColor: const Color(0xFFF6FAF7),
+      borderColor: const Color(0xFFDDECE3),
+      badgeColor: const Color(0xFFE8F0EC),
+    );
+  }
+
+  if (latestSample case final sample? when sample.sourceType == 'daily_checkin') {
     return _HomeSuggestion(
       title: '先进入一段真空专注',
-      body: '最近一次样本还带着拉扯感。先给自己一段安静区，再回到今天这一个动作：$minAction',
+      body: '最近一次记录还带着日常拉扯感。先给自己一段安静区，再回到今天这一个动作：$minAction',
       actionLabel: '开始专注',
       route: AppRoutes.vacuumFocus,
       icon: Icons.air_rounded,
