@@ -13,7 +13,8 @@ enum SampleFilter {
   all('全部'),
   dailyDeviation('每日偏离'),
   sos('SOS'),
-  restructure('首次重构');
+  restructure('首次重构'),
+  vacuumFocus('真空专注');
 
   const SampleFilter(this.label);
 
@@ -31,6 +32,7 @@ final recentSamplesProvider =
           SampleFilter.dailyDeviation => 'daily_checkin',
           SampleFilter.sos => 'sos',
           SampleFilter.restructure => 'manual',
+          SampleFilter.vacuumFocus => 'vacuum_focus',
         },
       );
 });
@@ -144,6 +146,12 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                         error: (error, stackTrace) => const SizedBox.shrink(),
                       ),
                       const SizedBox(height: 16),
+                      weeklyReviewAsync.when(
+                        data: (summary) => _PositiveSignalCard(summary: summary),
+                        loading: () => const SizedBox.shrink(),
+                        error: (error, stackTrace) => const SizedBox.shrink(),
+                      ),
+                      const SizedBox(height: 16),
                       topPatternsAsync.when(
                         data: (patterns) => _DeviationPatternCard(patterns: patterns),
                         loading: () => const SizedBox.shrink(),
@@ -248,6 +256,8 @@ String _emptyStateText(SampleFilter filter) {
       return '最近 7 天你还没有触发 SOS，这也是一种稳定的证据。';
     case SampleFilter.restructure:
       return '这一期的身份重构记录还没有沉淀到这里。';
+    case SampleFilter.vacuumFocus:
+      return '最近 7 天还没有专注完成样本，先完成一段安静区也会被记录在这里。';
   }
 }
 
@@ -297,6 +307,14 @@ class _InsightCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (statusLabel == '真空专注' || statusLabel == '专注完成') ...[
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.air_rounded,
+                      size: 16,
+                      color: Color(0xFF6E8FA3),
+                    ),
+                  ],
                   const Spacer(),
                   Text(
                     timeLabel,
@@ -385,6 +403,83 @@ class _WeeklyReviewCard extends StatelessWidget {
                 _StatPill(label: '部分偏离', value: summary.partialCount.toString()),
                 _StatPill(label: '完全偏离', value: summary.fullDeviationCount.toString()),
                 _StatPill(label: 'SOS', value: summary.sosCount.toString()),
+                _StatPill(
+                  label: '真空专注',
+                  value: summary.vacuumFocusCount.toString(),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PositiveSignalCard extends StatelessWidget {
+  const _PositiveSignalCard({required this.summary});
+
+  final WeeklyReviewSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF2F7),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '正向回流信号',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: const Color(0xFF6E8FA3),
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '最近 7 天',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF8E8E93),
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              summary.positiveSignalTitle,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: const Color(0xFF2D2D2D),
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              summary.positiveSignalBody,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF5B5B5B),
+                    height: 1.6,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _StatPill(label: '完全匹配', value: summary.matchCount.toString()),
+                _StatPill(
+                  label: '真空专注',
+                  value: summary.vacuumFocusCount.toString(),
+                ),
               ],
             ),
           ],
@@ -592,6 +687,10 @@ class _TrendSummaryCard extends StatelessWidget {
                   label: '首次重构',
                   value: summary.restructureCount.toString(),
                 ),
+                _StatPill(
+                  label: '真空专注',
+                  value: summary.vacuumFocusCount.toString(),
+                ),
               ],
             ),
           ],
@@ -607,6 +706,8 @@ String _defaultStatusLabel(String sourceType) {
       return 'SOS急救';
     case 'manual':
       return '首次重构';
+    case 'vacuum_focus':
+      return '真空专注';
     default:
       return '惯性样本';
   }
@@ -615,6 +716,10 @@ String _defaultStatusLabel(String sourceType) {
 Color _statusColor(String statusTag, String sourceType) {
   if (sourceType == 'sos') {
     return const Color(0xFF819B8E);
+  }
+
+  if (sourceType == 'vacuum_focus') {
+    return const Color(0xFF6E8FA3);
   }
 
   if (statusTag.contains('部分')) {
@@ -631,6 +736,10 @@ Color _statusColor(String statusTag, String sourceType) {
 Color _statusBackground(String statusTag, String sourceType) {
   if (sourceType == 'sos') {
     return const Color(0xFFE8F0EC);
+  }
+
+  if (sourceType == 'vacuum_focus') {
+    return const Color(0xFFEAF2F7);
   }
 
   if (statusTag.contains('部分')) {

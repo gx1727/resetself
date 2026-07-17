@@ -422,7 +422,8 @@ class UserProfileRepository {
     final sampleResult = await db.rawQuery('''
       SELECT
         COUNT(*) AS sample_count,
-        SUM(CASE WHEN source_type = 'sos' THEN 1 ELSE 0 END) AS sos_count
+        SUM(CASE WHEN source_type = 'sos' THEN 1 ELSE 0 END) AS sos_count,
+        SUM(CASE WHEN source_type = 'vacuum_focus' THEN 1 ELSE 0 END) AS vacuum_focus_count
       FROM inertia_sample
       WHERE datetime(created_at) >= datetime('now', '-7 day')
     ''');
@@ -435,6 +436,7 @@ class UserProfileRepository {
       partialCount: (checkinRow['partial_count'] as int?) ?? 0,
       fullDeviationCount: (checkinRow['full_count'] as int?) ?? 0,
       sosCount: (sampleRow['sos_count'] as int?) ?? 0,
+      vacuumFocusCount: (sampleRow['vacuum_focus_count'] as int?) ?? 0,
       sampleCount: (sampleRow['sample_count'] as int?) ?? 0,
     );
   }
@@ -482,7 +484,8 @@ class UserProfileRepository {
       SELECT
         SUM(CASE WHEN source_type = 'daily_checkin' THEN 1 ELSE 0 END) AS daily_count,
         SUM(CASE WHEN source_type = 'sos' THEN 1 ELSE 0 END) AS sos_count,
-        SUM(CASE WHEN source_type = 'manual' THEN 1 ELSE 0 END) AS manual_count
+        SUM(CASE WHEN source_type = 'manual' THEN 1 ELSE 0 END) AS manual_count,
+        SUM(CASE WHEN source_type = 'vacuum_focus' THEN 1 ELSE 0 END) AS vacuum_focus_count
       FROM inertia_sample
       WHERE datetime(created_at) >= datetime('now', '-7 day')
     ''');
@@ -492,6 +495,7 @@ class UserProfileRepository {
       dailyDeviationCount: (row['daily_count'] as int?) ?? 0,
       sosCount: (row['sos_count'] as int?) ?? 0,
       restructureCount: (row['manual_count'] as int?) ?? 0,
+      vacuumFocusCount: (row['vacuum_focus_count'] as int?) ?? 0,
     );
   }
 
