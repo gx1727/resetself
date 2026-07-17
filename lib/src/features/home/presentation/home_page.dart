@@ -1067,7 +1067,7 @@ _HomeSuggestion _buildHomeSuggestion({
       title: '现在直接回到最小动作',
       body: '你刚完成一段真空专注，说明拉扯已经被放下来了。接下来不要扩张目标，只继续：$minAction',
       actionLabel: '看回流记录',
-      route: AppRoutes.insights,
+      route: _insightsLocation('vacuum_focus'),
       icon: Icons.playlist_add_check_circle_rounded,
       accentColor: const Color(0xFF819B8E),
       backgroundColor: const Color(0xFFF6FAF7),
@@ -1095,7 +1095,7 @@ _HomeSuggestion _buildHomeSuggestion({
       title: '先把动作收小，再继续',
       body: '今天有一点被旧习惯拉走了，但不用补偿。先只做这一件小事：$minAction',
       actionLabel: '看偏离记录',
-      route: AppRoutes.insights,
+      route: _insightsLocation('daily_deviation'),
       icon: Icons.adjust_rounded,
       accentColor: const Color(0xFFC2A878),
       backgroundColor: const Color(0xFFFCF8F1),
@@ -1109,7 +1109,7 @@ _HomeSuggestion _buildHomeSuggestion({
       title: '保持今天这条新轨道',
       body: '今天已经完成一次完全匹配，不需要再额外加码。继续把这一个动作做稳：$minAction',
       actionLabel: '看本周回流',
-      route: AppRoutes.insights,
+      route: _insightsLocation('all'),
       icon: Icons.trending_up_rounded,
       accentColor: const Color(0xFF819B8E),
       backgroundColor: const Color(0xFFF6FAF7),
@@ -1137,7 +1137,9 @@ _HomeSuggestion _buildHomeSuggestion({
       title: '把今天这一个动作做稳',
       body: '这周已经出现 ${summary.vacuumFocusCount} 次真空专注、${summary.matchCount} 次完全匹配。现在继续：$minAction',
       actionLabel: '查看本周回流',
-      route: AppRoutes.insights,
+      route: _insightsLocation(
+        summary.vacuumFocusCount > 0 ? 'vacuum_focus' : 'all',
+      ),
       icon: Icons.trending_up_rounded,
       accentColor: const Color(0xFF819B8E),
       backgroundColor: const Color(0xFFF6FAF7),
@@ -1157,6 +1159,10 @@ _HomeSuggestion _buildHomeSuggestion({
     borderColor: const Color(0xFFDDEAF2),
     badgeColor: const Color(0xFFEAF2F7),
   );
+}
+
+String _insightsLocation(String filter) {
+  return '${AppRoutes.insights}?filter=$filter';
 }
 
 extension on _HomeSuggestion {
