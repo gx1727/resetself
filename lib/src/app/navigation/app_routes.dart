@@ -2,6 +2,7 @@ class AppRoutes {
   static const bootstrap = '/bootstrap';
   static const onboarding = '/welcome';
   static const vacuumMode = '/vacuum';
+  static const vacuumFocus = '/vacuum/focus';
   static const restructureSetup = '/restructure/setup';
   static const home = '/home';
   static const restructureHub = '/restructure';

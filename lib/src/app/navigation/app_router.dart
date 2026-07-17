@@ -11,6 +11,7 @@ import '../../features/restructure/presentation/restructure_hub_page.dart';
 import '../../features/restructure/presentation/restructure_setup_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/sos/presentation/sos_page.dart';
+import '../../features/vacuum/presentation/vacuum_focus_page.dart';
 import '../state/app_controller.dart';
 import '../widgets/app_shell.dart';
 import 'app_routes.dart';
@@ -41,6 +42,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       const unlockedBeforeSetup = {
         AppRoutes.onboarding,
         AppRoutes.vacuumMode,
+        AppRoutes.vacuumFocus,
         AppRoutes.restructureSetup,
       };
 
@@ -70,6 +72,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.vacuumMode,
         builder: (context, state) => const VacuumModePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.vacuumFocus,
+        builder: (context, state) => const VacuumFocusPage(),
       ),
       GoRoute(
         path: AppRoutes.restructureSetup,

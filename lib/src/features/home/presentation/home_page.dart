@@ -7,7 +7,9 @@ import '../../../app/state/app_controller.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/daily_checkin.dart';
 import '../../../data/models/inertia_sample.dart';
+import '../../../data/models/vacuum_mode_settings.dart';
 import '../../../data/models/weekly_review_summary.dart';
+import '../../vacuum/application/vacuum_mode_providers.dart';
 
 final todayCheckinProvider = FutureProvider.autoDispose<DailyCheckin?>((ref) {
   return ref.watch(userProfileRepositoryProvider).getTodayCheckin();
@@ -36,6 +38,7 @@ class HomePage extends ConsumerWidget {
     final recentSampleCountAsync = ref.watch(recentSampleCountProvider);
     final latestSampleAsync = ref.watch(latestSampleProvider);
     final weeklyReviewAsync = ref.watch(homeWeeklyReviewProvider);
+    final vacuumSettingsAsync = ref.watch(vacuumModeSettingsProvider);
 
     final identityText = profile.identityText.isEmpty
         ? '“我是一个\n看重长远价值的人”'
@@ -128,9 +131,10 @@ class HomePage extends ConsumerWidget {
                     ],
                   ),
                   Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(
+                        children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -408,7 +412,17 @@ class HomePage extends ConsumerWidget {
                           loading: () => const SizedBox.shrink(),
                           error: (error, stackTrace) => const SizedBox.shrink(),
                         ),
+                        const SizedBox(height: 16),
+                        vacuumSettingsAsync.when(
+                          data: (settings) => _VacuumRhythmCard(
+                            settings: settings,
+                            onTap: () => context.go(AppRoutes.vacuumFocus),
+                          ),
+                          loading: () => const SizedBox.shrink(),
+                          error: (error, stackTrace) => const SizedBox.shrink(),
+                        ),
                       ],
+                      ),
                     ),
                   ),
                   FilledButton(
@@ -589,4 +603,118 @@ String _formatSampleTime(DateTime value) {
   }
 
   return '${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')} $hour:$minute';
+}
+
+class _VacuumRhythmCard extends StatelessWidget {
+  const _VacuumRhythmCard({
+    required this.settings,
+    required this.onTap,
+  });
+
+  final VacuumModeSettings settings;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2321),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFF2E3934)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '当前真空节奏',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: const Color(0xFF9DB3A7),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${settings.focusWindowMinutes} 分钟安静区',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: const Color(0xFFF7F7F5),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _vacuumSummary(settings),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFFD5DDD8),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _VacuumTag(
+                        label: settings.noiseCutEnabled ? '降噪开启' : '降噪关闭',
+                      ),
+                      _VacuumTag(
+                        label: settings.gentleReminderEnabled
+                            ? '温和提醒'
+                            : '无提醒',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Color(0xFFD5DDD8),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VacuumTag extends StatelessWidget {
+  const _VacuumTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0x1AF7F7F5),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0x33F7F7F5)),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: const Color(0xFFF7F7F5),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+String _vacuumSummary(VacuumModeSettings settings) {
+  final reminderPart = settings.gentleReminderEnabled
+      ? '${settings.reminderTime} 提醒'
+      : '不启用提醒';
+  final noisePart = settings.noiseCutEnabled ? '先隔离碎片输入' : '手动保持安静区';
+
+  return '$reminderPart · ${settings.focusRhythmLabel} · $noisePart';
 }

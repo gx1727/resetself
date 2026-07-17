@@ -41,7 +41,7 @@ class SettingsPage extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.air_rounded, color: Color(0xFF819B8E)),
                   title: const Text('认知真空准备区'),
-                  subtitle: const Text('查看降噪准备、专注时段和提醒骨架'),
+                  subtitle: const Text('查看降噪准备、专注时段和提醒节奏'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => context.go(AppRoutes.vacuumMode),
                 ),
@@ -65,6 +65,17 @@ class SettingsPage extends ConsumerWidget {
                     title: Text('当前真空模式节奏'),
                     subtitle: Text('本地设置暂时未展开'),
                   ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(
+                    Icons.do_not_disturb_alt_rounded,
+                    color: Color(0xFF819B8E),
+                  ),
+                  title: const Text('打开专注进行中页'),
+                  subtitle: const Text('按当前真空模式节奏进入一段安静区'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.go(AppRoutes.vacuumFocus),
                 ),
               ],
             ),
