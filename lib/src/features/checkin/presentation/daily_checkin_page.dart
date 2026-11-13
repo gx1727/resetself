@@ -74,7 +74,7 @@ class _DailyCheckinPageState extends ConsumerState<DailyCheckinPage> {
                 top: 0,
                 right: 0,
                 child: IconButton(
-                  onPressed: () => context.go(AppRoutes.home),
+                  onPressed: () => context.pop(),
                   icon: const Icon(
                     Icons.close_rounded,
                     color: Color(0xFF8E8E93),

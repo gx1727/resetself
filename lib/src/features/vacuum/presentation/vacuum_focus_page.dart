@@ -159,7 +159,7 @@ class VacuumFocusPage extends ConsumerWidget {
                   const SizedBox(height: 12),
                   if (!focusState.isActive) ...[
                     OutlinedButton(
-                      onPressed: () => context.go(AppRoutes.restructureSetup),
+                      onPressed: () => context.push(AppRoutes.restructureSetup),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -172,11 +172,13 @@ class VacuumFocusPage extends ConsumerWidget {
                     const SizedBox(height: 12),
                   ],
                   OutlinedButton(
-                    onPressed: () => context.go(
-                      hasCompletedInitialRestructure
-                          ? AppRoutes.home
-                          : AppRoutes.vacuumMode,
-                    ),
+                    onPressed: () {
+                      if (hasCompletedInitialRestructure) {
+                        context.go(AppRoutes.home);
+                      } else {
+                        context.pop();
+                      }
+                    },
                     child: Text(
                       hasCompletedInitialRestructure ? '先回首页' : '回到真空准备区',
                     ),

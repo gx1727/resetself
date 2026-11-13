@@ -154,7 +154,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   title: Text(copy.focusPanelTitle),
                   subtitle: Text(copy.focusPanelBody),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.go(AppRoutes.vacuumMode),
+                  onTap: () => context.push(AppRoutes.vacuumMode),
                 ),
                 const Divider(height: 1),
                 vacuumSettingsAsync.when(
@@ -176,17 +176,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     title: const Text('当前真空模式节奏'),
                     subtitle: Text(NeutralCopyEngine.settingsFocusSettingsError()),
                   ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(
-                    Icons.do_not_disturb_alt_rounded,
-                    color: Color(0xFF819B8E),
-                  ),
-                  title: Text(copy.focusOpenTitle),
-                  subtitle: Text(copy.focusOpenBody),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.go(AppRoutes.vacuumFocus),
                 ),
               ],
             ),
@@ -210,42 +199,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     ),
                     subtitle: Text(_focusStateSummary(focusState)),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton.tonal(
-                            onPressed: () async {
-                              final settings = vacuumSettingsAsync.valueOrNull;
-                              if (settings == null) {
-                                context.go(AppRoutes.vacuumFocus);
-                                return;
-                              }
-
-                              final repository =
-                                  ref.read(userProfileRepositoryProvider);
-                              if (focusState.isActive) {
-                                await repository.stopVacuumFocus();
-                              } else {
-                                await repository.startVacuumFocus(settings);
-                              }
-                              invalidateHomeSurface(ref);
-                            },
-                            child: Text(
-                              focusState.isActive ? '结束这段专注' : '从设置页开始专注',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => context.go(AppRoutes.vacuumFocus),
-                            child: Text(NeutralCopyEngine.settingsOpenFocusPageLabel()),
-                          ),
-                        ),
-                      ],
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.do_not_disturb_alt_rounded,
+                      color: Color(0xFF819B8E),
                     ),
+                    title: Text(NeutralCopyEngine.settingsOpenFocusPageLabel()),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.push(AppRoutes.vacuumFocus),
                   ),
                 ],
               ),

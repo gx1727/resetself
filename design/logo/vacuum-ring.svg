@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-label="ResetSelf">
+  <path d="M 38.81 13.71 A 35.50 35.50 0 0 1 57.19 13.71" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M 60.72 14.86 A 35.50 35.50 0 0 1 72.21 22.04" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M 76.35 26.64 A 35.50 35.50 0 0 1 83.45 46.14" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M 83.36 51.09 A 35.50 35.50 0 0 1 80.68 61.87" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M 76.35 69.36 A 35.50 35.50 0 0 1 63.00 80.17" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M 58.97 81.76 A 35.50 35.50 0 0 1 44.29 83.31" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M 37.62 81.95 A 35.50 35.50 0 0 1 19.65 69.36" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M 17.89 66.81 A 35.50 35.50 0 0 1 13.28 55.38" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M 12.51 47.38 A 35.50 35.50 0 0 1 16.37 31.88" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M 19.28 27.13 A 35.50 35.50 0 0 1 33.56 15.57" stroke-width="2.60" stroke="#819B8E" fill="none" stroke-linecap="round" stroke-opacity="0.55"/>
+  <circle cx="48.00" cy="48.00" r="17.50" stroke-width="4.20" stroke="#819B8E" fill="none" stroke-linecap="round"/>
+  <circle cx="48.00" cy="48.00" r="4.60" fill="#819B8E"/>
+</svg>

@@ -43,7 +43,7 @@ Future<void> openRestructureRestartFlow(
   }
 
   if (choice == RestructureRestartChoice.editLastAnswers) {
-    context.go(AppRoutes.restructureSetupEdit);
+    context.push(AppRoutes.restructureSetupEdit);
     return;
   }
 

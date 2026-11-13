@@ -124,7 +124,8 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
       _appliedFilterKey =
           filter == SampleFilter.all ? null : filter.queryValue;
     });
-    context.go(_insightsLocation(filter, source: _entrySource));
+    // 筛选是同一页面内的维度切换，用 replace 仅替换当前路由，保留返回栈。
+    context.replace(_insightsLocation(filter, source: _entrySource));
   }
 
   /// 进入 24h 重构前弹出选择层；其它入口保持直接跳转。
@@ -134,7 +135,12 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
       return;
     }
 
-    context.go(route);
+    if (route == AppRoutes.home) {
+      context.go(route);
+      return;
+    }
+
+    context.push(route);
   }
 
   @override
@@ -183,7 +189,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => context.go(AppRoutes.home),
+                    onPressed: () => context.pop(),
                     icon: const Icon(
                       Icons.chevron_left_rounded,
                       size: 28,

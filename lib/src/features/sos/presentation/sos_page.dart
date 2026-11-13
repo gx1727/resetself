@@ -78,7 +78,7 @@ class _SosPageState extends ConsumerState<SosPage> {
                 top: 0,
                 left: 0,
                 child: IconButton(
-                  onPressed: () => context.go(AppRoutes.home),
+                  onPressed: () => context.pop(),
                   icon: const Icon(
                     Icons.close_rounded,
                     color: Color(0xFF8E8E93),

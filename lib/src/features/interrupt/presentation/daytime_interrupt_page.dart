@@ -107,7 +107,7 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => context.go(AppRoutes.home),
+                    onPressed: () => context.pop(),
                     icon: const Icon(
                       Icons.chevron_left_rounded,
                       size: 28,
@@ -552,7 +552,7 @@ class _InterruptDisabledCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           OutlinedButton(
-            onPressed: () => context.go(AppRoutes.vacuumMode),
+            onPressed: () => context.push(AppRoutes.vacuumMode),
             child: const Text('去认知真空准备区'),
           ),
         ],

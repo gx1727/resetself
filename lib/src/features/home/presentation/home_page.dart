@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/navigation/app_routes.dart';
 import '../../../app/state/app_controller.dart';
 import '../../../core/copy/neutral_copy_engine.dart';
+import '../../../core/widgets/resetself_mark.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/daily_checkin.dart';
 import '../../../data/models/inertia_sample.dart';
@@ -58,25 +59,33 @@ class HomePage extends ConsumerWidget {
                   Row(
                     children: [
                       IconButton(
-                        onPressed: () => context.go(AppRoutes.onboarding),
+                        onPressed: () => context.push(AppRoutes.vacuumMode),
                         icon: const Icon(
                           Icons.air_rounded,
                           color: Color(0xFF8E8E93),
                         ),
                       ),
                       const Spacer(),
-                      Text(
-                        'ResetSelf',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          letterSpacing: 2.4,
-                          color: const Color(0x992D2D2D),
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const ResetSelfMark(size: 22),
+                          const SizedBox(width: 8),
+                          Text(
+                            'ResetSelf',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  letterSpacing: 2.4,
+                                  color: const Color(0x992D2D2D),
+                                ),
+                          ),
+                        ],
                       ),
                       const Spacer(),
                       Stack(
                         children: [
                           IconButton(
-                            onPressed: () => context.go(
+                            onPressed: () => context.push(
                               _insightsLocation(source: 'home_archive'),
                             ),
                             icon: const Icon(
@@ -87,44 +96,48 @@ class HomePage extends ConsumerWidget {
                           Positioned(
                             top: 9,
                             right: 6,
-                            child: recentSampleCount > 0
-                                ? Container(
-                                    constraints: const BoxConstraints(
-                                      minWidth: 20,
-                                      minHeight: 20,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 5,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF819B8E),
-                                      borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(
-                                        color: const Color(0xFFF7F7F5),
-                                        width: 2,
+                            child: IgnorePointer(
+                              child: recentSampleCount > 0
+                                  ? Container(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 20,
+                                        minHeight: 20,
                                       ),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      recentSampleCount > 9
-                                          ? '9+'
-                                          : '$recentSampleCount',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 5,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF819B8E),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                        border: Border.all(
+                                          color: const Color(0xFFF7F7F5),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        recentSampleCount > 9
+                                            ? '9+'
+                                            : '$recentSampleCount',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
                           ),
                         ],
                       ),
                       IconButton(
-                        onPressed: () => context.go(AppRoutes.settings),
+                        onPressed: () => context.push(AppRoutes.settings),
                         icon: const Icon(
                           Icons.tune_rounded,
                           color: Color(0xFF8E8E93),
@@ -137,277 +150,256 @@ class HomePage extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Column(
                         children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F0EC),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            homeCopy.identityBadge,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              letterSpacing: 1.8,
-                              color: const Color(0xFF819B8E),
-                              fontWeight: FontWeight.w700,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F0EC),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              homeCopy.identityBadge,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    letterSpacing: 1.8,
+                                    color: const Color(0xFF819B8E),
+                                    fontWeight: FontWeight.w700,
+                                  ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          identityText,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: const Color(0xFF2D2D2D),
-                            fontWeight: FontWeight.w700,
-                            height: 1.35,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(32),
-                            border: Border.all(color: const Color(0xFFF0F0F0)),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x0C000000),
-                                blurRadius: 15,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.menu_book_outlined,
-                                          size: 14,
-                                          color: Color(0xFF8E8E93),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          homeCopy.minActionLabel,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelMedium
-                                              ?.copyWith(
-                                                color: const Color(0xFF8E8E93),
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      minAction,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            color: const Color(0xFF2D2D2D),
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 14),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _todayStatusBackground(todayCheckin),
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            _todayStatusIcon(todayCheckin),
-                                            size: 16,
-                                            color: _todayStatusColor(todayCheckin),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              todayStatusLabel,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: _todayStatusColor(todayCheckin),
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                          const SizedBox(height: 24),
+                          Text(
+                            identityText,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(
+                                  color: const Color(0xFF2D2D2D),
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.35,
                                 ),
-                              ),
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: _todayStatusBackground(todayCheckin),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: _todayStatusBackground(todayCheckin),
-                                  ),
-                                ),
-                                child: Icon(
-                                  _todayStatusIcon(todayCheckin),
-                                  color: _todayStatusColor(todayCheckin),
-                                ),
-                              ),
-                            ],
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        _HomeAntiVisionCard(
-                          record: latestRestructureAsync.valueOrNull,
-                          onTap: () => context.go(AppRoutes.restructureHub),
-                        ),
-                        const SizedBox(height: 16),
-                        _HomeInterruptCard(
-                          settings: vacuumSettingsAsync.valueOrNull,
-                          todayCount:
-                              (todayInterruptAsync.valueOrNull ?? const []).length,
-                          onTap: () => context.go(AppRoutes.daytimeInterrupt),
-                        ),
-                        const SizedBox(height: 16),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 220),
-                          child: latestSample == null
-                              ? const SizedBox.shrink()
-                              : Container(
-                                  key: ValueKey(latestSample.id),
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(18),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFCFCFA),
-                                    borderRadius: BorderRadius.circular(24),
-                                    border: Border.all(color: const Color(0xFFEAEAE5)),
-                                  ),
+                          const SizedBox(height: 32),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(32),
+                              border: Border.all(
+                                color: const Color(0xFFF0F0F0),
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0C000000),
+                                  blurRadius: 15,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
-                                          Icon(
-                                            _sampleSourceIcon(latestSample.sourceType),
-                                            size: 16,
-                                            color: _sampleSourceColor(latestSample),
+                                          const Icon(
+                                            Icons.menu_book_outlined,
+                                            size: 14,
+                                            color: Color(0xFF8E8E93),
                                           ),
-                                          const SizedBox(width: 8),
+                                          const SizedBox(width: 6),
                                           Text(
-                                            '最近一次惯性样本',
+                                            homeCopy.minActionLabel,
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .labelMedium
                                                 ?.copyWith(
-                                                  color: const Color(0xFF8E8E93),
-                                                ),
-                                          ),
-                                          const Spacer(),
-                                          Text(
-                                            _formatSampleTime(latestSample.createdAt),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: const Color(0xFF8E8E93),
+                                                  color: const Color(
+                                                    0xFF8E8E93,
+                                                  ),
                                                 ),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 10),
                                       Text(
-                                        latestSample.statusTag.isEmpty
-                                            ? _sampleSourceLabel(latestSample.sourceType)
-                                            : latestSample.statusTag,
+                                        minAction,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .titleSmall
+                                            .titleMedium
                                             ?.copyWith(
-                                              color: _sampleSourceColor(latestSample),
-                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF2D2D2D),
+                                              fontWeight: FontWeight.w600,
                                             ),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        latestSample.content,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: const Color(0xFF5B5B5B),
-                                              height: 1.5,
+                                      const SizedBox(height: 14),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: _todayStatusBackground(
+                                            todayCheckin,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              _todayStatusIcon(todayCheckin),
+                                              size: 16,
+                                              color: _todayStatusColor(
+                                                todayCheckin,
+                                              ),
                                             ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                todayStatusLabel,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: _todayStatusColor(
+                                                        todayCheckin,
+                                                      ),
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                        ),
-                        const SizedBox(height: 16),
-                        weeklyReviewAsync.when(
-                          data: (summary) => GestureDetector(
-                            onTap: () => context.go(
-                              _insightsLocation(source: 'weekly_summary'),
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: _todayStatusBackground(todayCheckin),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: _todayStatusBackground(
+                                        todayCheckin,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    _todayStatusIcon(todayCheckin),
+                                    color: _todayStatusColor(todayCheckin),
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FBF8),
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: const Color(0xFFE2ECE6)),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
+                          ),
+                          const SizedBox(height: 16),
+                          _HomeAntiVisionCard(
+                            record: latestRestructureAsync.valueOrNull,
+                            onTap: () => context.push(AppRoutes.restructureHub),
+                          ),
+                          const SizedBox(height: 16),
+                          _HomeInterruptCard(
+                            settings: vacuumSettingsAsync.valueOrNull,
+                            todayCount:
+                                (todayInterruptAsync.valueOrNull ?? const [])
+                                    .length,
+                            onTap: () =>
+                                context.push(AppRoutes.daytimeInterrupt),
+                          ),
+                          const SizedBox(height: 16),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            child: latestSample == null
+                                ? const SizedBox.shrink()
+                                : Container(
+                                    key: ValueKey(latestSample.id),
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(18),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFCFCFA),
+                                      borderRadius: BorderRadius.circular(24),
+                                      border: Border.all(
+                                        color: const Color(0xFFEAEAE5),
+                                      ),
+                                    ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              _sampleSourceIcon(
+                                                latestSample.sourceType,
+                                              ),
+                                              size: 16,
+                                              color: _sampleSourceColor(
+                                                latestSample,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '最近一次惯性样本',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelMedium
+                                                  ?.copyWith(
+                                                    color: const Color(
+                                                      0xFF8E8E93,
+                                                    ),
+                                                  ),
+                                            ),
+                                            const Spacer(),
+                                            Text(
+                                              _formatSampleTime(
+                                                latestSample.createdAt,
+                                              ),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: const Color(
+                                                      0xFF8E8E93,
+                                                    ),
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
                                         Text(
-                                          '本周状态摘要',
+                                          latestSample.statusTag.isEmpty
+                                              ? _sampleSourceLabel(
+                                                  latestSample.sourceType,
+                                                )
+                                              : latestSample.statusTag,
                                           style: Theme.of(context)
                                               .textTheme
-                                              .labelMedium
+                                              .titleSmall
                                               ?.copyWith(
-                                                color: const Color(0xFF819B8E),
+                                                color: _sampleSourceColor(
+                                                  latestSample,
+                                                ),
                                                 fontWeight: FontWeight.w700,
                                               ),
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          summary.summaryTitle,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleSmall
-                                              ?.copyWith(
-                                                color: const Color(0xFF2D2D2D),
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          summary.summaryBody,
+                                          latestSample.content,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodySmall
+                                              .bodyMedium
                                               ?.copyWith(
                                                 color: const Color(0xFF5B5B5B),
                                                 height: 1.5,
@@ -416,87 +408,162 @@ class HomePage extends ConsumerWidget {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  const Icon(
-                                    Icons.chevron_right_rounded,
-                                    color: Color(0xFF8E8E93),
+                          ),
+                          const SizedBox(height: 16),
+                          weeklyReviewAsync.when(
+                            data: (summary) => GestureDetector(
+                              onTap: () => context.push(
+                                _insightsLocation(source: 'weekly_summary'),
+                              ),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FBF8),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: const Color(0xFFE2ECE6),
                                   ),
-                                ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '本周状态摘要',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelMedium
+                                                ?.copyWith(
+                                                  color: const Color(
+                                                    0xFF819B8E,
+                                                  ),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            summary.summaryTitle,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  color: const Color(
+                                                    0xFF2D2D2D,
+                                                  ),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            summary.summaryBody,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: const Color(
+                                                    0xFF5B5B5B,
+                                                  ),
+                                                  height: 1.5,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: Color(0xFF8E8E93),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          loading: () => const SizedBox.shrink(),
-                          error: (error, stackTrace) => const SizedBox.shrink(),
-                        ),
-                        const SizedBox(height: 16),
-                        weeklyReviewAsync.when(
-                          data: (summary) => _HomePositiveSignalCard(
-                            summary: summary,
-                            onTap: () => context.go(
-                              _insightsLocation(
-                                filter: summary.vacuumFocusCount > 0
-                                    ? 'vacuum_focus'
-                                    : 'all',
-                                source: 'positive_signal',
-                              ),
-                            ),
-                          ),
-                          loading: () => const SizedBox.shrink(),
-                          error: (error, stackTrace) => const SizedBox.shrink(),
-                        ),
-                        const SizedBox(height: 16),
-                        weeklyReviewAsync.when(
-                          data: (summary) => vacuumFocusStateAsync.when(
-                            data: (focusState) {
-                              final suggestion = _buildHomeSuggestion(
-                                todayCheckin: todayCheckin,
-                                latestSample: latestSample,
-                                focusState: focusState,
-                                summary: summary,
-                                minAction: minAction,
-                              );
-                              return _HomeSmartSuggestionCard(
-                                suggestion: suggestion,
-                                onTap: () => context.go(suggestion.route),
-                              );
-                            },
                             loading: () => const SizedBox.shrink(),
-                            error: (error, stackTrace) => const SizedBox.shrink(),
+                            error: (error, stackTrace) =>
+                                const SizedBox.shrink(),
                           ),
-                          loading: () => const SizedBox.shrink(),
-                          error: (error, stackTrace) => const SizedBox.shrink(),
-                        ),
-                        const SizedBox(height: 16),
-                        vacuumSettingsAsync.when(
-                          data: (settings) => vacuumFocusStateAsync.when(
-                            data: (focusState) => _VacuumRhythmCard(
-                              settings: settings,
-                              focusState: focusState,
-                              minAction: minAction,
-                              onTap: () => context.go(AppRoutes.vacuumFocus),
-                              onToggleFocus: () async {
-                                final repository =
-                                    ref.read(userProfileRepositoryProvider);
-                                if (focusState.isActive) {
-                                  await repository.stopVacuumFocus();
-                                } else {
-                                  await repository.startVacuumFocus(settings);
-                                }
-                                invalidateHomeSurface(ref);
+                          const SizedBox(height: 16),
+                          weeklyReviewAsync.when(
+                            data: (summary) => _HomePositiveSignalCard(
+                              summary: summary,
+                              onTap: () => context.push(
+                                _insightsLocation(
+                                  filter: summary.vacuumFocusCount > 0
+                                      ? 'vacuum_focus'
+                                      : 'all',
+                                  source: 'positive_signal',
+                                ),
+                              ),
+                            ),
+                            loading: () => const SizedBox.shrink(),
+                            error: (error, stackTrace) =>
+                                const SizedBox.shrink(),
+                          ),
+                          const SizedBox(height: 16),
+                          weeklyReviewAsync.when(
+                            data: (summary) => vacuumFocusStateAsync.when(
+                              data: (focusState) {
+                                final suggestion = _buildHomeSuggestion(
+                                  todayCheckin: todayCheckin,
+                                  latestSample: latestSample,
+                                  focusState: focusState,
+                                  summary: summary,
+                                  minAction: minAction,
+                                );
+                                return _HomeSmartSuggestionCard(
+                                  suggestion: suggestion,
+                                  onTap: () => context.push(suggestion.route),
+                                );
                               },
+                              loading: () => const SizedBox.shrink(),
+                              error: (error, stackTrace) =>
+                                  const SizedBox.shrink(),
                             ),
                             loading: () => const SizedBox.shrink(),
-                            error: (error, stackTrace) => const SizedBox.shrink(),
+                            error: (error, stackTrace) =>
+                                const SizedBox.shrink(),
                           ),
-                          loading: () => const SizedBox.shrink(),
-                          error: (error, stackTrace) => const SizedBox.shrink(),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          vacuumSettingsAsync.when(
+                            data: (settings) => vacuumFocusStateAsync.when(
+                              data: (focusState) => _VacuumRhythmCard(
+                                settings: settings,
+                                focusState: focusState,
+                                minAction: minAction,
+                                onTap: () =>
+                                    context.push(AppRoutes.vacuumFocus),
+                                onToggleFocus: () async {
+                                  final repository = ref.read(
+                                    userProfileRepositoryProvider,
+                                  );
+                                  if (focusState.isActive) {
+                                    await repository.stopVacuumFocus();
+                                  } else {
+                                    await repository.startVacuumFocus(settings);
+                                  }
+                                  invalidateHomeSurface(ref);
+                                },
+                              ),
+                              loading: () => const SizedBox.shrink(),
+                              error: (error, stackTrace) =>
+                                  const SizedBox.shrink(),
+                            ),
+                            loading: () => const SizedBox.shrink(),
+                            error: (error, stackTrace) =>
+                                const SizedBox.shrink(),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                   FilledButton(
-                    onPressed: () => context.go(AppRoutes.dailyCheckin),
+                    onPressed: () => context.push(AppRoutes.dailyCheckin),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -525,7 +592,7 @@ class HomePage extends ConsumerWidget {
                 elevation: 8,
                 child: InkWell(
                   customBorder: const CircleBorder(),
-                  onTap: () => context.go(AppRoutes.sos),
+                  onTap: () => context.push(AppRoutes.sos),
                   child: Container(
                     width: 56,
                     height: 56,
@@ -753,9 +820,9 @@ class _HomeAntiVisionCard extends StatelessWidget {
             else ...[
               Text(
                 copy.bodyPrefix,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF8E8E93),
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF8E8E93)),
               ),
               const SizedBox(height: 6),
               Text(
@@ -808,10 +875,10 @@ class _HomeInterruptCard extends StatelessWidget {
     final summary = !enabled
         ? copy.disabledTitle
         : todayCount > 0
-            ? CopyStrategy.daytimeInterruptRecorded(todayCount)
-            : next == null
-                ? copy.pendingLabel
-                : '下一个时点：$next';
+        ? CopyStrategy.daytimeInterruptRecorded(todayCount)
+        : next == null
+        ? copy.pendingLabel
+        : '下一个时点：$next';
 
     return GestureDetector(
       onTap: onTap,
@@ -863,10 +930,7 @@ class _HomeInterruptCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFF8E8E93),
-            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8E8E93)),
           ],
         ),
       ),
@@ -963,9 +1027,7 @@ class _VacuumRhythmCard extends StatelessWidget {
                         label: settings.noiseCutEnabled ? '降噪开启' : '降噪关闭',
                       ),
                       _VacuumTag(
-                        label: settings.gentleReminderEnabled
-                            ? '温和提醒'
-                            : '无提醒',
+                        label: settings.gentleReminderEnabled ? '温和提醒' : '无提醒',
                       ),
                       if (_shouldShowVacuumReturnPrompt(focusState))
                         _VacuumTag(label: '已完成上一段专注'),
@@ -978,18 +1040,13 @@ class _VacuumRhythmCard extends StatelessWidget {
                       backgroundColor: const Color(0x1AF7F7F5),
                       foregroundColor: const Color(0xFFF7F7F5),
                     ),
-                    child: Text(
-                      focusState.isActive ? '结束这段专注' : '从首页开始专注',
-                    ),
+                    child: Text(focusState.isActive ? '结束这段专注' : '从首页开始专注'),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFFD5DDD8),
-            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFFD5DDD8)),
           ],
         ),
       ),
@@ -998,10 +1055,7 @@ class _VacuumRhythmCard extends StatelessWidget {
 }
 
 class _HomePositiveSignalCard extends StatelessWidget {
-  const _HomePositiveSignalCard({
-    required this.summary,
-    required this.onTap,
-  });
+  const _HomePositiveSignalCard({required this.summary, required this.onTap});
 
   final WeeklyReviewSummary summary;
   final VoidCallback onTap;
@@ -1073,10 +1127,7 @@ class _HomePositiveSignalCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFF8E8E93),
-            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8E8E93)),
           ],
         ),
       ),
@@ -1231,8 +1282,8 @@ String _vacuumSummary(
     final remainingText = remainingMinutes == null
         ? copy.vacuumActiveOngoing
         : remainingMinutes == 0
-            ? copy.vacuumActiveEnded
-            : CopyStrategy.homeVacuumRemaining(remainingMinutes);
+        ? copy.vacuumActiveEnded
+        : CopyStrategy.homeVacuumRemaining(remainingMinutes);
     return '$remainingText · ${settings.focusRhythmLabel}';
   }
 
@@ -1243,8 +1294,9 @@ String _vacuumSummary(
   final reminderPart = settings.gentleReminderEnabled
       ? CopyStrategy.homeVacuumReminder(settings.reminderTime)
       : copy.vacuumReminderOff;
-  final noisePart =
-      settings.noiseCutEnabled ? copy.vacuumNoiseOn : copy.vacuumNoiseOff;
+  final noisePart = settings.noiseCutEnabled
+      ? copy.vacuumNoiseOn
+      : copy.vacuumNoiseOff;
 
   return '$reminderPart · ${settings.focusRhythmLabel} · $noisePart';
 }
@@ -1270,8 +1322,8 @@ _HomeSuggestion _buildHomeSuggestion({
     final remainingText = remainingMinutes == null
         ? '这一段专注已经开始，先别切走。'
         : remainingMinutes == 0
-            ? '这段专注已经到点，可以收尾后回到今天的动作。'
-            : '预计还有 $remainingMinutes 分钟，先把这一段安静区走完。';
+        ? '这段专注已经到点，可以收尾后回到今天的动作。'
+        : '预计还有 $remainingMinutes 分钟，先把这一段安静区走完。';
     final copy = NeutralCopyEngine.homeFocusActive(remainingText);
     return _HomeSuggestion(
       title: copy.title,
@@ -1386,7 +1438,8 @@ _HomeSuggestion _buildHomeSuggestion({
     );
   }
 
-  if (latestSample case final sample? when sample.sourceType == 'daily_checkin') {
+  if (latestSample case final sample?
+      when sample.sourceType == 'daily_checkin') {
     final copy = NeutralCopyEngine.homeRecentDailyDeviation(minAction);
     return _HomeSuggestion(
       title: copy.title,
@@ -1437,10 +1490,7 @@ _HomeSuggestion _buildHomeSuggestion({
   );
 }
 
-String _insightsLocation({
-  String filter = 'all',
-  String? source,
-}) {
+String _insightsLocation({String filter = 'all', String? source}) {
   final queryParameters = <String, String>{};
   if (filter != 'all') {
     queryParameters['filter'] = filter;

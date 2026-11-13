@@ -281,7 +281,7 @@ class _RestructureSetupPageState extends ConsumerState<RestructureSetupPage> {
 
   void _handleBack() {
     if (_currentStepIndex == 0) {
-      context.go(AppRoutes.onboarding);
+      context.pop();
       return;
     }
 
@@ -356,7 +356,7 @@ class _RestructureSetupPageState extends ConsumerState<RestructureSetupPage> {
                   TextButton(
                     onPressed: controller.isSaving
                         ? null
-                        : () => context.go(AppRoutes.onboarding),
+                        : () => context.pop(),
                     child: const Text('稍后继续'),
                   ),
                 ],

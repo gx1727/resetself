@@ -94,7 +94,7 @@ class OnboardingPage extends StatelessWidget {
                   side: const BorderSide(color: Color(0xFF3A3A3C)),
                   backgroundColor: const Color(0xFF2C2C2E),
                 ),
-                onPressed: () => context.go(AppRoutes.vacuumMode),
+                onPressed: () => context.push(AppRoutes.vacuumMode),
                 child: Row(
                   children: [
                     const Icon(Icons.waves_outlined, color: Color(0xFF819B8E)),
@@ -110,7 +110,7 @@ class OnboardingPage extends StatelessWidget {
                   backgroundColor: const Color(0xFFE5E5EA),
                   foregroundColor: const Color(0xFF1C1C1E),
                 ),
-                onPressed: () => context.go(AppRoutes.restructureSetup),
+                onPressed: () => context.push(AppRoutes.restructureSetup),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

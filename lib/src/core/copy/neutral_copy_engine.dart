@@ -169,14 +169,12 @@ class CopyStrategy {
       debugRestoreTime: '恢复时间',
       debugCountSuffix: ' 条',
       debugTimestampTemplate: '{date} {time}',
-      title: '设置与调试',
+      title: '设置',
       subtitle: '先保留当前阶段需要的系统入口，方便查看本地状态、真空节奏和数据备份。',
       backupTitle: '数据导出与备份',
       backupBody: '把关键本地表导出成 JSON 备份文件，先保存在应用文档目录的 backups 文件夹里。',
       focusPanelTitle: '认知真空准备区',
       focusPanelBody: '查看降噪准备、专注时段和提醒节奏',
-      focusOpenTitle: '打开专注进行中页',
-      focusOpenBody: '按当前真空模式节奏进入一段安静区',
       resetLabel: '重置为首次引导',
       resettingLabel: '重置中...',
       debugPanelTitle: '本地数据库调试面板',
@@ -1277,8 +1275,6 @@ class SettingsCopy {
     required this.backupBody,
     required this.focusPanelTitle,
     required this.focusPanelBody,
-    required this.focusOpenTitle,
-    required this.focusOpenBody,
     required this.resetLabel,
     required this.resettingLabel,
     required this.debugPanelTitle,
@@ -1307,8 +1303,6 @@ class SettingsCopy {
   final String backupBody;
   final String focusPanelTitle;
   final String focusPanelBody;
-  final String focusOpenTitle;
-  final String focusOpenBody;
   final String resetLabel;
   final String resettingLabel;
   final String debugPanelTitle;

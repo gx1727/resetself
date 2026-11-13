@@ -77,7 +77,9 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     IconButton(
-                      onPressed: () => context.pop(),
+                      onPressed: () => context.canPop()
+                          ? context.pop()
+                          : context.go(AppRoutes.home),
                       icon: const Icon(
                         Icons.chevron_left_rounded,
                         color: Color(0xFF8E8E93),
@@ -104,7 +106,7 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                     const SizedBox(height: 16),
                     _VacuumFocusEntryCard(
                       settings: settings,
-                      onOpenFocus: () => context.go(AppRoutes.vacuumFocus),
+                      onOpenFocus: () => context.push(AppRoutes.vacuumFocus),
                     ),
                     const SizedBox(height: 24),
                     Text(
@@ -229,7 +231,7 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                     ],
                     const SizedBox(height: 20),
                     OutlinedButton(
-                      onPressed: () => context.go(AppRoutes.vacuumFocus),
+                      onPressed: () => context.push(AppRoutes.vacuumFocus),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -241,7 +243,7 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                     ),
                     const SizedBox(height: 12),
                     FilledButton(
-                      onPressed: () => context.go(AppRoutes.restructureSetup),
+                      onPressed: () => context.push(AppRoutes.restructureSetup),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

@@ -14,7 +14,6 @@ import '../../features/settings/presentation/settings_page.dart';
 import '../../features/sos/presentation/sos_page.dart';
 import '../../features/vacuum/presentation/vacuum_focus_page.dart';
 import '../state/app_controller.dart';
-import '../widgets/app_shell.dart';
 import 'app_routes.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -96,44 +95,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.sos,
         builder: (context, state) => const SosPage(),
       ),
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return AppShell(navigationShell: navigationShell);
-        },
-        branches: [
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.home,
-                builder: (context, state) => const HomePage(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.restructureHub,
-                builder: (context, state) => const RestructureHubPage(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.insights,
-                builder: (context, state) => const InsightsPage(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.settings,
-                builder: (context, state) => const SettingsPage(),
-              ),
-            ],
-          ),
-        ],
+      GoRoute(
+        path: AppRoutes.home,
+        builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.restructureHub,
+        builder: (context, state) => const RestructureHubPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.insights,
+        builder: (context, state) => const InsightsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsPage(),
       ),
     ],
   );
