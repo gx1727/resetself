@@ -7,6 +7,7 @@ import '../../data/database/database_providers.dart';
 import '../../data/models/restructure_draft.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/user_profile_repository.dart';
+import '../system/system_resident.dart';
 
 final appControllerProvider = ChangeNotifierProvider<AppController>((ref) {
   return AppController(ref.watch(userProfileRepositoryProvider));
@@ -58,6 +59,7 @@ class AppController extends ChangeNotifier {
     try {
       await _repository.ensureSingleProfile();
       _profile = await _repository.getCurrentProfile();
+      unawaited(_syncSystemResident());
     } catch (error, stackTrace) {
       debugPrint('[init] failed: $error');
       debugPrint('$stackTrace');
@@ -129,6 +131,22 @@ class AppController extends ChangeNotifier {
     } finally {
       _isSaving = false;
       notifyListeners();
+    }
+  }
+
+  /// 拉起后台常驻服务，并按当前真空模式设置重排系统提醒。
+  Future<void> _syncSystemResident() async {
+    final repository = _repository;
+    if (repository == null || !SystemResident.isSupported) {
+      return;
+    }
+
+    try {
+      final settings = await repository.getVacuumModeSettings();
+      await SystemResident.start();
+      await SystemResident.syncReminders(settings);
+    } catch (error) {
+      debugPrint('[resident] sync failed: $error');
     }
   }
 

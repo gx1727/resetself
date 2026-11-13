@@ -245,6 +245,7 @@ class _SosDoneView extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: const Color(0xFF2C2C2E),

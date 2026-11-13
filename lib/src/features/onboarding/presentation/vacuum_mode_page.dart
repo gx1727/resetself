@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
+import '../../../app/system/system_resident.dart';
 import '../../../core/copy/neutral_copy_engine.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/vacuum_mode_settings.dart';
@@ -33,6 +34,7 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
     });
 
     await ref.read(userProfileRepositoryProvider).saveVacuumModeSettings(settings);
+    await SystemResident.syncReminders(settings);
     ref.invalidate(vacuumModeSettingsProvider);
 
     if (!mounted) {
@@ -336,6 +338,7 @@ class _VacuumChoiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: const Color(0xFF2C2C2E),

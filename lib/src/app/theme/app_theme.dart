@@ -14,6 +14,8 @@ class AppTheme {
         backgroundColor: Colors.transparent,
       ),
       cardTheme: CardThemeData(
+        // 去掉 Card 默认的 4dp 外边距，让所有卡片与页面内容区等宽对齐。
+        margin: EdgeInsets.zero,
         color: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(

@@ -123,6 +123,13 @@ class HomePage extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      IconButton(
+                        onPressed: () => context.go(AppRoutes.settings),
+                        icon: const Icon(
+                          Icons.tune_rounded,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      ),
                     ],
                   ),
                   Expanded(

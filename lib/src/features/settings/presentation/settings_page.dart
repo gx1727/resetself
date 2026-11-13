@@ -13,6 +13,7 @@ import '../../../data/models/backup_restore_result.dart';
 import '../../../data/models/vacuum_focus_state.dart';
 import '../../home/application/home_providers.dart';
 import '../../vacuum/application/vacuum_mode_providers.dart';
+import 'resident_settings_card.dart';
 
 final debugSnapshotProvider = FutureProvider.autoDispose<AppDebugSnapshot>((ref) {
   return ref.watch(userProfileRepositoryProvider).getDebugSnapshot();
@@ -261,51 +262,59 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           ),
           const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: debugSnapshotAsync.when(
-                data: (snapshot) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      copy.debugPanelTitle,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+          const ResidentSettingsCard(),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: debugSnapshotAsync.when(
+                  data: (snapshot) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        copy.debugPanelTitle,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                      _DebugRow(
+                        label: settingsCopy.debugDbPath,
+                        value: snapshot.databasePath,
+                      ),
+                      _DebugRow(
+                        label: settingsCopy.debugRecentSamples,
+                        value: '${snapshot.recentSampleCount}${settingsCopy.debugCountSuffix}',
+                      ),
+                      _DebugRow(
+                        label: settingsCopy.debugTotalSamples,
+                        value: '${snapshot.totalSampleCount}${settingsCopy.debugCountSuffix}',
+                      ),
+                      _DebugRow(
+                        label: settingsCopy.debugCheckinCount,
+                        value: '${snapshot.dailyCheckinCount}${settingsCopy.debugCountSuffix}',
+                      ),
+                      _DebugRow(
+                        label: settingsCopy.debugDraftStatus,
+                        value: snapshot.hasDraft ? '存在未完成草稿' : '没有草稿',
+                      ),
+                      _DebugRow(
+                        label: settingsCopy.debugRecentCheckinDate,
+                        value: snapshot.latestCheckinDate ?? '暂无',
+                      ),
+                    ],
+                  ),
+                  loading: () => Text(
+                    NeutralCopyEngine.settingsDebugLoading(),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  error: (error, stackTrace) => Text(
+                    NeutralCopyEngine.settingsDebugError(),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFF8E8E93),
                     ),
-                    const SizedBox(height: 12),
-                    _DebugRow(label: settingsCopy.debugDbPath, value: snapshot.databasePath),
-                    _DebugRow(
-                      label: settingsCopy.debugRecentSamples,
-                      value: '${snapshot.recentSampleCount}${settingsCopy.debugCountSuffix}',
-                    ),
-                    _DebugRow(
-                      label: settingsCopy.debugTotalSamples,
-                      value: '${snapshot.totalSampleCount}${settingsCopy.debugCountSuffix}',
-                    ),
-                    _DebugRow(
-                      label: settingsCopy.debugCheckinCount,
-                      value: '${snapshot.dailyCheckinCount}${settingsCopy.debugCountSuffix}',
-                    ),
-                    _DebugRow(
-                      label: settingsCopy.debugDraftStatus,
-                      value: snapshot.hasDraft ? '存在未完成草稿' : '没有草稿',
-                    ),
-                    _DebugRow(
-                      label: settingsCopy.debugRecentCheckinDate,
-                      value: snapshot.latestCheckinDate ?? '暂无',
-                    ),
-                  ],
-                ),
-                loading: () => Text(
-                  NeutralCopyEngine.settingsDebugLoading(),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                error: (error, stackTrace) => Text(
-                  NeutralCopyEngine.settingsDebugError(),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF8E8E93),
                   ),
                 ),
               ),

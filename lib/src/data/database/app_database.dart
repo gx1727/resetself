@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
   static const dbName = 'resetself_v1.db';
-  static const dbVersion = 6;
+  static const dbVersion = 7;
 
   Database? _database;
   Future<Database>? _databaseFuture;
@@ -75,6 +75,7 @@ class AppDatabase {
         identity_text TEXT NOT NULL DEFAULT '',
         today_min_action TEXT NOT NULL DEFAULT '',
         status TEXT NOT NULL DEFAULT 'uninit',
+        current_anchor_id INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -194,6 +195,11 @@ class AppDatabase {
     if (oldVersion < 6 && newVersion >= 6) {
       await _addRestructureComponentColumns(db);
       await _addInterruptColumnsToVacuumSettings(db);
+    }
+
+    if (oldVersion < 7 && newVersion >= 7) {
+      // v6 的全新安装走 onCreate，建表时漏了 current_anchor_id，这里统一补齐。
+      await _addCurrentAnchorIdToUserProfile(db);
     }
   }
 
