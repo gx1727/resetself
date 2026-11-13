@@ -5,6 +5,10 @@ class RestructureDraft {
     required this.beliefDraft,
     required this.identityDraft,
     required this.minActionDraft,
+    this.visionText = '',
+    this.yearGoal = '',
+    this.monthProject = '',
+    this.constraints = '',
     this.updatedAt,
   });
 
@@ -13,6 +17,19 @@ class RestructureDraft {
   final String beliefDraft;
   final String identityDraft;
   final String minActionDraft;
+
+  /// 游戏化闭环里的"愿景 MVP"：一句话描述理想中的新生活。
+  final String visionText;
+
+  /// 年度层：贴合新身份的长期方向（不量化结果）。
+  final String yearGoal;
+
+  /// 月度层：用来校准身份的核心任务。
+  final String monthProject;
+
+  /// 避坑机制：会触发旧习惯的环境、场景、信息与规避规则。
+  final String constraints;
+
   final DateTime? updatedAt;
 
   static RestructureDraft empty() {
@@ -30,7 +47,11 @@ class RestructureDraft {
         fearContent.trim().isNotEmpty ||
         beliefDraft.trim().isNotEmpty ||
         identityDraft.trim().isNotEmpty ||
-        minActionDraft.trim().isNotEmpty;
+        minActionDraft.trim().isNotEmpty ||
+        visionText.trim().isNotEmpty ||
+        yearGoal.trim().isNotEmpty ||
+        monthProject.trim().isNotEmpty ||
+        constraints.trim().isNotEmpty;
   }
 
   bool get isReadyToSubmit {
@@ -38,7 +59,11 @@ class RestructureDraft {
         fearContent.trim().isNotEmpty &&
         beliefDraft.trim().isNotEmpty &&
         identityDraft.trim().isNotEmpty &&
-        minActionDraft.trim().isNotEmpty;
+        minActionDraft.trim().isNotEmpty &&
+        visionText.trim().isNotEmpty &&
+        yearGoal.trim().isNotEmpty &&
+        monthProject.trim().isNotEmpty &&
+        constraints.trim().isNotEmpty;
   }
 
   RestructureDraft copyWith({
@@ -47,6 +72,10 @@ class RestructureDraft {
     String? beliefDraft,
     String? identityDraft,
     String? minActionDraft,
+    String? visionText,
+    String? yearGoal,
+    String? monthProject,
+    String? constraints,
     DateTime? updatedAt,
   }) {
     return RestructureDraft(
@@ -55,6 +84,10 @@ class RestructureDraft {
       beliefDraft: beliefDraft ?? this.beliefDraft,
       identityDraft: identityDraft ?? this.identityDraft,
       minActionDraft: minActionDraft ?? this.minActionDraft,
+      visionText: visionText ?? this.visionText,
+      yearGoal: yearGoal ?? this.yearGoal,
+      monthProject: monthProject ?? this.monthProject,
+      constraints: constraints ?? this.constraints,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -66,6 +99,10 @@ class RestructureDraft {
       beliefDraft: map['belief_draft'] as String? ?? '',
       identityDraft: map['identity_draft'] as String? ?? '',
       minActionDraft: map['min_action_draft'] as String? ?? '',
+      visionText: map['vision_text'] as String? ?? '',
+      yearGoal: map['year_goal'] as String? ?? '',
+      monthProject: map['month_project'] as String? ?? '',
+      constraints: map['constraints'] as String? ?? '',
       updatedAt: _parseTimestamp(map['updated_at']),
     );
   }
@@ -78,6 +115,10 @@ class RestructureDraft {
       'belief_draft': beliefDraft.trim(),
       'identity_draft': identityDraft.trim(),
       'min_action_draft': minActionDraft.trim(),
+      'vision_text': visionText.trim(),
+      'year_goal': yearGoal.trim(),
+      'month_project': monthProject.trim(),
+      'constraints': constraints.trim(),
       'updated_at': DateTime.now().toIso8601String(),
     };
   }

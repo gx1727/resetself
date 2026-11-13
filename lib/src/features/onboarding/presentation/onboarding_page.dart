@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
+import '../../../core/copy/neutral_copy_engine.dart';
 
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final copy = CopyStrategy.onboarding();
     return Scaffold(
       backgroundColor: const Color(0xFF1C1C1E),
       body: SafeArea(
@@ -33,7 +35,7 @@ class OnboardingPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                '在这里，没有打卡连签，没有进度压迫。\n\n只有绝对的安全、无评判的自省。\n授权开启极简模式，我们将为你屏蔽外界噪音。',
+                copy.subtitle,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: const Color(0xFF8E8E93),
                   height: 1.7,
@@ -93,12 +95,12 @@ class OnboardingPage extends StatelessWidget {
                   backgroundColor: const Color(0xFF2C2C2E),
                 ),
                 onPressed: () => context.go(AppRoutes.vacuumMode),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.waves_outlined, color: Color(0xFF819B8E)),
-                    SizedBox(width: 12),
-                    Expanded(child: Text('先看认知真空准备区')),
-                    Icon(Icons.chevron_right_rounded, size: 18),
+                    const Icon(Icons.waves_outlined, color: Color(0xFF819B8E)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(copy.vacuumPrepCta)),
+                    const Icon(Icons.chevron_right_rounded, size: 18),
                   ],
                 ),
               ),
@@ -109,12 +111,12 @@ class OnboardingPage extends StatelessWidget {
                   foregroundColor: const Color(0xFF1C1C1E),
                 ),
                 onPressed: () => context.go(AppRoutes.restructureSetup),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('开启 24h 重构向导'),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_rounded, size: 18),
+                    Text(copy.restructureCta),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward_rounded, size: 18),
                   ],
                 ),
               ),

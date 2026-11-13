@@ -9,5 +9,6 @@ class AppRoutes {
   static const insights = '/insights';
   static const settings = '/settings';
   static const dailyCheckin = '/checkin';
+  static const daytimeInterrupt = '/interrupt';
   static const sos = '/sos';
 }

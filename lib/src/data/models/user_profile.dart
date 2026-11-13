@@ -21,6 +21,7 @@ class UserProfile {
     required this.identityText,
     required this.todayMinAction,
     required this.status,
+    this.currentAnchorId,
     this.createdAt,
     this.updatedAt,
   });
@@ -29,6 +30,7 @@ class UserProfile {
   final String identityText;
   final String todayMinAction;
   final UserProfileStatus status;
+  final int? currentAnchorId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -58,6 +60,7 @@ class UserProfile {
       identityText: map['identity_text'] as String? ?? '',
       todayMinAction: map['today_min_action'] as String? ?? '',
       status: UserProfileStatus.fromValue(map['status'] as String?),
+      currentAnchorId: map['current_anchor_id'] as int?,
       createdAt: _parseTimestamp(map['created_at']),
       updatedAt: _parseTimestamp(map['updated_at']),
     );
@@ -69,6 +72,7 @@ class UserProfile {
       'identity_text': identityText,
       'today_min_action': todayMinAction,
       'status': status.value,
+      'current_anchor_id': currentAnchorId,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };

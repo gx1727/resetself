@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
+import '../../../core/copy/neutral_copy_engine.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/deviation_pattern.dart';
 import '../../../data/models/insight_trend_summary.dart';
@@ -35,6 +36,34 @@ enum SampleFilter {
       'sos' => SampleFilter.sos,
       'restructure' => SampleFilter.restructure,
       'vacuum_focus' => SampleFilter.vacuumFocus,
+      _ => null,
+    };
+  }
+}
+
+enum InsightEntrySource {
+  homeArchive('首页样本入口'),
+  weeklySummary('首页本周摘要'),
+  positiveSignal('首页正向回流'),
+  homeSuggestion('首页建议卡');
+
+  const InsightEntrySource(this.label);
+
+  final String label;
+
+  String get queryValue => switch (this) {
+        InsightEntrySource.homeArchive => 'home_archive',
+        InsightEntrySource.weeklySummary => 'weekly_summary',
+        InsightEntrySource.positiveSignal => 'positive_signal',
+        InsightEntrySource.homeSuggestion => 'home_suggestion',
+      };
+
+  static InsightEntrySource? fromQueryValue(String? value) {
+    return switch (value) {
+      'home_archive' => InsightEntrySource.homeArchive,
+      'weekly_summary' => InsightEntrySource.weeklySummary,
+      'positive_signal' => InsightEntrySource.positiveSignal,
+      'home_suggestion' => InsightEntrySource.homeSuggestion,
       _ => null,
     };
   }
@@ -81,23 +110,44 @@ class InsightsPage extends ConsumerStatefulWidget {
 class _InsightsPageState extends ConsumerState<InsightsPage> {
   SampleFilter _selectedFilter = SampleFilter.all;
   String? _appliedFilterKey;
+  InsightEntrySource? _entrySource;
+  String? _appliedSourceKey;
+
+  void _handleFilterSelected(SampleFilter filter) {
+    if (filter == _selectedFilter) {
+      return;
+    }
+
+    setState(() {
+      _selectedFilter = filter;
+      _appliedFilterKey =
+          filter == SampleFilter.all ? null : filter.queryValue;
+    });
+    context.go(_insightsLocation(filter, source: _entrySource));
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final filterKey = GoRouterState.of(context).uri.queryParameters['filter'];
-    if (_appliedFilterKey == filterKey) {
+    final queryParameters = GoRouterState.of(context).uri.queryParameters;
+    final filterKey = queryParameters['filter'];
+    final sourceKey = queryParameters['source'];
+    if (_appliedFilterKey == filterKey && _appliedSourceKey == sourceKey) {
       return;
     }
 
     _appliedFilterKey = filterKey;
+    _appliedSourceKey = sourceKey;
     final nextFilter = filterKey == null
         ? SampleFilter.all
         : SampleFilter.fromQueryValue(filterKey);
-    if (nextFilter != null && nextFilter != _selectedFilter) {
+    final nextSource = InsightEntrySource.fromQueryValue(sourceKey);
+    if (nextFilter != null &&
+        (nextFilter != _selectedFilter || nextSource != _entrySource)) {
       setState(() {
         _selectedFilter = nextFilter;
+        _entrySource = nextSource;
       });
     }
   }
@@ -110,6 +160,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
     final trendSummaryAsync = ref.watch(insightTrendSummaryProvider);
     final weeklySummary = weeklyReviewAsync.valueOrNull;
     final trendSummary = trendSummaryAsync.valueOrNull;
+    final insightsCopy = CopyStrategy.insights();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F5),
@@ -130,7 +181,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                   ),
                   Expanded(
                     child: Text(
-                      '惯性样本库',
+                      insightsCopy.pageTitle,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: const Color(0xFF2D2D2D),
@@ -155,11 +206,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                     return ChoiceChip(
                       label: Text(filter.label),
                       selected: isSelected,
-                      onSelected: (_) {
-                        setState(() {
-                          _selectedFilter = filter;
-                        });
-                      },
+                      onSelected: (_) => _handleFilterSelected(filter),
                       labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isSelected
                             ? const Color(0xFF819B8E)
@@ -182,6 +229,13 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                   data: (samples) => ListView(
                     padding: EdgeInsets.zero,
                     children: [
+                      if (_entrySource case final entrySource?) ...[
+                        _InsightEntrySourceCard(
+                          source: entrySource,
+                          filter: _selectedFilter,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       _FilterContextCard(
                         filter: _selectedFilter,
                         weeklySummary: weeklySummary,
@@ -255,10 +309,23 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                             faded: sample.sourceType == 'daily_checkin',
                           ),
                         ],
+                      if (samples.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _InsightFollowupCard(
+                          filter: _selectedFilter,
+                          entrySource: _entrySource,
+                          onTap: () => context.go(
+                            _followupAction(
+                              _selectedFilter,
+                              source: _entrySource,
+                            ).route,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       Center(
                         child: Text(
-                          '只展示最近 7 天的样本数据',
+                          insightsCopy.footer,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: const Color(0x998E8E93),
                           ),
@@ -268,7 +335,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                   ),
                   loading: () => Center(
                     child: Text(
-                      '样本库正在慢慢浮现...',
+                      insightsCopy.loadingHint,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: const Color(0x998E8E93),
                       ),
@@ -276,7 +343,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                   ),
                   error: (error, stackTrace) => Center(
                     child: Text(
-                      '样本库暂时没有展开，但你的本地数据仍是安全的。',
+                      insightsCopy.errorHint,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: const Color(0xFF8E8E93),
@@ -354,6 +421,95 @@ class _InsightEmptyStateCard extends StatelessWidget {
   }
 }
 
+class _InsightFollowupCard extends StatelessWidget {
+  const _InsightFollowupCard({
+    required this.filter,
+    required this.entrySource,
+    required this.onTap,
+  });
+
+  final SampleFilter filter;
+  final InsightEntrySource? entrySource;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final action = _followupAction(filter, source: entrySource);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCFCFA),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFEAEAE5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F0EC),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              action.icon,
+              size: 18,
+              color: action.accentColor,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _followupEyebrow(entrySource),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: action.accentColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  action.title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: const Color(0xFF2D2D2D),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  action.body,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF5B5B5B),
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.tonal(
+                  onPressed: onTap,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(action.label),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 18),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EmptyStateAction {
   const _EmptyStateAction({
     required this.label,
@@ -362,6 +518,121 @@ class _EmptyStateAction {
 
   final String label;
   final String route;
+}
+
+class _FollowupAction {
+  const _FollowupAction({
+    required this.title,
+    required this.body,
+    required this.label,
+    required this.route,
+    required this.icon,
+    required this.accentColor,
+  });
+
+  final String title;
+  final String body;
+  final String label;
+  final String route;
+  final IconData icon;
+  final Color accentColor;
+}
+
+class _InsightEntrySourceCard extends StatelessWidget {
+  const _InsightEntrySourceCard({
+    required this.source,
+    required this.filter,
+  });
+
+  final InsightEntrySource source;
+  final SampleFilter filter;
+
+  @override
+  Widget build(BuildContext context) {
+    final config = _entrySourceConfig(source, filter);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: config.backgroundColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: config.borderColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: config.badgeColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              config.icon,
+              size: 18,
+              color: config.accentColor,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  config.eyebrow,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: config.accentColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  config.title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: const Color(0xFF2D2D2D),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  config.body,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF5B5B5B),
+                    height: 1.6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightEntrySourceConfig {
+  const _InsightEntrySourceConfig({
+    required this.eyebrow,
+    required this.title,
+    required this.body,
+    required this.icon,
+    required this.accentColor,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.badgeColor,
+  });
+
+  final String eyebrow;
+  final String title;
+  final String body;
+  final IconData icon;
+  final Color accentColor;
+  final Color backgroundColor;
+  final Color borderColor;
+  final Color badgeColor;
 }
 
 class _InsightCard extends StatelessWidget {
@@ -903,15 +1174,16 @@ class _TrendSummaryCard extends StatelessWidget {
 }
 
 String _defaultStatusLabel(String sourceType) {
+  final copy = CopyStrategy.insights();
   switch (sourceType) {
     case 'sos':
-      return 'SOS急救';
+      return copy.defaultStatusSos;
     case 'manual':
-      return '首次重构';
+      return copy.defaultStatusManual;
     case 'vacuum_focus':
-      return '真空专注';
+      return copy.defaultStatusVacuumFocus;
     default:
-      return '惯性样本';
+      return copy.defaultStatusGeneric;
   }
 }
 
@@ -985,17 +1257,7 @@ bool _showsTrendSummary(SampleFilter filter) {
 }
 
 String _filterLeadText(SampleFilter filter) {
-  return switch (filter) {
-    SampleFilter.all => '偏差=迭代数据，偏差≠失败。\n这里记录了最近 7 天被旧惯性拉扯的时刻。',
-    SampleFilter.dailyDeviation =>
-      '这里聚焦每天的日常拉扯。先看清最常发生的偏离，再决定要把动作缩到哪里。',
-    SampleFilter.sos =>
-      '这里是最强烈拉扯被系统接住的时刻。先被接住，再慢慢回到今天这一小步。',
-    SampleFilter.restructure =>
-      '这里保存身份重构留下的锚点。它们不是口号，而是你重新站回来的依据。',
-    SampleFilter.vacuumFocus =>
-      '这里记录你主动把自己带回来的证据。每一段完成的真空专注，都是回流正在发生。',
-  };
+  return NeutralCopyEngine.insightsFilterLead(filter.queryValue);
 }
 
 _FilterContextConfig _filterContextConfig(
@@ -1003,14 +1265,20 @@ _FilterContextConfig _filterContextConfig(
   WeeklyReviewSummary? weeklySummary,
   InsightTrendSummary? trendSummary,
 ) {
+  final copy = NeutralCopyEngine.insightsFilterContext(
+    filterKey: filter.queryValue,
+    partialCount: weeklySummary?.partialCount ?? 0,
+    fullDeviationCount: weeklySummary?.fullDeviationCount ?? 0,
+    sosCount: weeklySummary?.sosCount ?? 0,
+    restructureCount: trendSummary?.restructureCount ?? 0,
+    focusCount: weeklySummary?.vacuumFocusCount ?? 0,
+  );
   switch (filter) {
     case SampleFilter.dailyDeviation:
-      final partial = weeklySummary?.partialCount ?? 0;
-      final full = weeklySummary?.fullDeviationCount ?? 0;
       return _FilterContextConfig(
-        eyebrow: '当前筛选：每日偏离',
-        title: '先看日常拉扯最常从哪里开始',
-        body: '最近 7 天记录到部分偏离 $partial 次、完全偏离 $full 次。先识别最常见的偏离场景，再把动作收小。',
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        body: copy.body,
         icon: Icons.adjust_rounded,
         accentColor: const Color(0xFFC2A878),
         backgroundColor: const Color(0xFFFCF8F1),
@@ -1018,11 +1286,10 @@ _FilterContextConfig _filterContextConfig(
         badgeColor: const Color(0xFFF9F5EC),
       );
     case SampleFilter.sos:
-      final sosCount = weeklySummary?.sosCount ?? 0;
       return _FilterContextConfig(
-        eyebrow: '当前筛选：SOS',
-        title: '先看那些最需要被接住的时刻',
-        body: '最近 7 天触发 SOS $sosCount 次。这里不是失败记录，而是潜意识最强烈防御出现时，你依然留下来的证据。',
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        body: copy.body,
         icon: Icons.monitor_heart_outlined,
         accentColor: const Color(0xFF819B8E),
         backgroundColor: const Color(0xFFF4FAF6),
@@ -1030,11 +1297,10 @@ _FilterContextConfig _filterContextConfig(
         badgeColor: const Color(0xFFE8F0EC),
       );
     case SampleFilter.restructure:
-      final restructureCount = trendSummary?.restructureCount ?? 0;
       return _FilterContextConfig(
-        eyebrow: '当前筛选：首次重构',
-        title: '先回到身份锚点，而不是只盯着偏离',
-        body: '最近 7 天可见的重构锚点样本有 $restructureCount 条。它们提醒你为什么开始，以及现在要回到哪里。',
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        body: copy.body,
         icon: Icons.self_improvement_outlined,
         accentColor: const Color(0xFF819B8E),
         backgroundColor: const Color(0xFFF6FAF7),
@@ -1042,11 +1308,10 @@ _FilterContextConfig _filterContextConfig(
         badgeColor: const Color(0xFFE8F0EC),
       );
     case SampleFilter.vacuumFocus:
-      final focusCount = weeklySummary?.vacuumFocusCount ?? 0;
       return _FilterContextConfig(
-        eyebrow: '当前筛选：真空专注',
-        title: '先看你是怎么把自己带回来的',
-        body: '最近 7 天已完成真空专注 $focusCount 次。这里呈现的不是拉扯本身，而是你主动回流、重新站稳的证据。',
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        body: copy.body,
         icon: Icons.air_rounded,
         accentColor: const Color(0xFF6E8FA3),
         backgroundColor: const Color(0xFFF4F8FB),
@@ -1055,9 +1320,9 @@ _FilterContextConfig _filterContextConfig(
       );
     case SampleFilter.all:
       return _FilterContextConfig(
-        eyebrow: '当前筛选：全部样本',
-        title: '先从全貌看这一周发生了什么',
-        body: '这里会同时看到偏离、SOS、重构锚点和真空专注。先看全貌，再决定今天更需要回到哪一类信号。',
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        body: copy.body,
         icon: Icons.library_books_outlined,
         accentColor: const Color(0xFF819B8E),
         backgroundColor: const Color(0xFFF6FAF7),
@@ -1097,25 +1362,161 @@ _EmptyStateAction _emptyStateAction(SampleFilter filter) {
   }
 }
 
+_FollowupAction _followupAction(
+  SampleFilter filter, {
+  InsightEntrySource? source,
+}) {
+  final copy = NeutralCopyEngine.insightsFollowup(
+    filterKey: filter.queryValue,
+    sourceKey: source?.queryValue,
+  );
+  switch (filter) {
+    case SampleFilter.all:
+      return _FollowupAction(
+        title: copy.title,
+        body: copy.body,
+        label: copy.label,
+        route: AppRoutes.home,
+        icon: Icons.home_outlined,
+        accentColor: source == InsightEntrySource.positiveSignal
+            ? const Color(0xFF6E8FA3)
+            : const Color(0xFF819B8E),
+      );
+    case SampleFilter.dailyDeviation:
+      return _FollowupAction(
+        title: copy.title,
+        body: copy.body,
+        label: copy.label,
+        route: AppRoutes.dailyCheckin,
+        icon: Icons.check_circle_outline_rounded,
+        accentColor: source == InsightEntrySource.homeSuggestion
+            ? const Color(0xFFC2A878)
+            : const Color(0xFFC2A878),
+      );
+    case SampleFilter.sos:
+      return _FollowupAction(
+        title: copy.title,
+        body: copy.body,
+        label: copy.label,
+        route: AppRoutes.vacuumFocus,
+        icon: Icons.air_rounded,
+        accentColor: const Color(0xFF819B8E),
+      );
+    case SampleFilter.restructure:
+      return _FollowupAction(
+        title: copy.title,
+        body: copy.body,
+        label: copy.label,
+        route: AppRoutes.restructureSetup,
+        icon: Icons.self_improvement_outlined,
+        accentColor: const Color(0xFF819B8E),
+      );
+    case SampleFilter.vacuumFocus:
+      return _FollowupAction(
+        title: copy.title,
+        body: copy.body,
+        label: copy.label,
+        route: AppRoutes.home,
+        icon: Icons.playlist_add_check_circle_rounded,
+        accentColor: const Color(0xFF6E8FA3),
+      );
+  }
+}
+
+String _followupEyebrow(InsightEntrySource? source) {
+  return NeutralCopyEngine.insightsFollowupEyebrow(source?.queryValue);
+}
+
+_InsightEntrySourceConfig _entrySourceConfig(
+  InsightEntrySource source,
+  SampleFilter filter,
+) {
+  final filterLabel = filter.label;
+  final copy = NeutralCopyEngine.insightsEntrySource(
+    sourceKey: source.queryValue,
+    filterLabel: filterLabel,
+  );
+
+  switch (source) {
+    case InsightEntrySource.homeArchive:
+      return _InsightEntrySourceConfig(
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        body: copy.body,
+        icon: Icons.archive_outlined,
+        accentColor: Color(0xFF819B8E),
+        backgroundColor: Color(0xFFF6FAF7),
+        borderColor: Color(0xFFDDECE3),
+        badgeColor: Color(0xFFE8F0EC),
+      );
+    case InsightEntrySource.weeklySummary:
+      return _InsightEntrySourceConfig(
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        body: copy.body,
+        icon: Icons.stacked_bar_chart_rounded,
+        accentColor: const Color(0xFF819B8E),
+        backgroundColor: const Color(0xFFF6FAF7),
+        borderColor: const Color(0xFFDDECE3),
+        badgeColor: const Color(0xFFE8F0EC),
+      );
+    case InsightEntrySource.positiveSignal:
+      return _InsightEntrySourceConfig(
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        body: copy.body,
+        icon: Icons.air_rounded,
+        accentColor: const Color(0xFF6E8FA3),
+        backgroundColor: const Color(0xFFF4F8FB),
+        borderColor: const Color(0xFFDDEAF2),
+        badgeColor: const Color(0xFFEAF2F7),
+      );
+    case InsightEntrySource.homeSuggestion:
+      return _InsightEntrySourceConfig(
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        body: copy.body,
+        icon: Icons.arrow_outward_rounded,
+        accentColor: const Color(0xFF819B8E),
+        backgroundColor: const Color(0xFFF6FAF7),
+        borderColor: const Color(0xFFDDECE3),
+        badgeColor: const Color(0xFFE8F0EC),
+      );
+  }
+}
+
+String _insightsLocation(
+  SampleFilter filter, {
+  InsightEntrySource? source,
+}) {
+  final queryParameters = <String, String>{};
+  if (filter != SampleFilter.all) {
+    queryParameters['filter'] = filter.queryValue;
+  }
+  if (source != null) {
+    queryParameters['source'] = source.queryValue;
+  }
+  if (queryParameters.isEmpty) {
+    return AppRoutes.insights;
+  }
+
+  return '${AppRoutes.insights}?${Uri(queryParameters: queryParameters).query}';
+}
+
 String _formatTimeLabel(DateTime createdAt) {
+  final hourMinute = CopyStrategy.insightsHourMinute(createdAt);
   final now = DateTime.now();
   final difference = now.difference(createdAt);
 
   if (difference.inDays == 0) {
-    return '今天 ${_formatHourMinute(createdAt)}';
+    return CopyStrategy.insightsTodayTime(hourMinute);
   }
 
   if (difference.inDays == 1) {
-    return '昨天 ${_formatHourMinute(createdAt)}';
+    return CopyStrategy.insightsYesterdayTime(hourMinute);
   }
 
   final month = createdAt.month.toString().padLeft(2, '0');
   final day = createdAt.day.toString().padLeft(2, '0');
-  return '$month-$day ${_formatHourMinute(createdAt)}';
-}
-
-String _formatHourMinute(DateTime value) {
-  final hour = value.hour.toString().padLeft(2, '0');
-  final minute = value.minute.toString().padLeft(2, '0');
-  return '$hour:$minute';
+  return CopyStrategy.insightsMonthDayTime('$month-$day', hourMinute);
 }

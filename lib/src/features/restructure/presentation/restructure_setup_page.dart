@@ -20,38 +20,66 @@ class _RestructureSetupPageState extends ConsumerState<RestructureSetupPage> {
   static const _steps = [
     _WizardStep(
       id: 'anti',
-      phase: '上午 90min',
-      title: '反愿景',
-      description: '如果保持现状 5 年不改变，\n最让你感到恐惧的画面是什么？',
-      placeholder: '写下最真实的恶果，不要美化...',
+      phase: '晨间 · 心理深挖',
+      title: '反愿景（Anti-Vision）',
+      description: '若未来五年、十年乃至临终都一成不变，\n绝不想让它发生的画面是什么？',
+      placeholder: '写下你反复忍受的钝痛与抱怨，越真实越有力...',
     ),
     _WizardStep(
       id: 'fear',
-      phase: '上午 90min',
-      title: '底层恐惧',
-      description: '剥离外界期待后，\n你内心深处到底在逃避什么？',
-      placeholder: '怕失败、怕他人的评价、还是怕承担责任...',
+      phase: '晨间 · 心理深挖',
+      title: '深层恐惧与自我保护',
+      description: '如果现在的行为是一种自我保护，\n你到底在保护什么？代价是什么？',
+      placeholder: '怕失败、怕被评价、怕承担责任，还是怕失去某种身份...',
     ),
     _WizardStep(
       id: 'belief',
-      phase: '夜晚 120min',
-      title: '限制性信念',
+      phase: '夜晚 · 身份重装',
+      title: '内在敌人（限制性信念）',
       description: '提炼出阻碍你的，\n最深层的一个自我否定信念。',
-      placeholder: '例如：我总觉得自己不配得到好结果...',
+      placeholder: '例如：我总觉得我不配得到好结果...',
     ),
     _WizardStep(
       id: 'identity',
-      phase: '夜晚 120min',
+      phase: '夜晚 · 身份重装',
       title: '新身份叙事',
-      description: '写下你的新身份。\n不要结果指标，只要状态叙述。',
-      placeholder: '我是一个______的人',
+      description: '为了让新生活自然而非勉强，\n你必须相信自己是什么样的人？',
+      placeholder: '我是那种会______的人',
+    ),
+    _WizardStep(
+      id: 'vision',
+      phase: '夜晚 · 身份重装',
+      title: '愿景 MVP',
+      description: '用一句话概括你正在建设、走向什么，\n同时知道它还会继续演化。',
+      placeholder: '例如：我在建立一个由自己节奏掌控的生活...',
     ),
     _WizardStep(
       id: 'action',
-      phase: '夜晚 120min',
-      title: '极简行动',
-      description: '为了印证这个新身份，\n明天你可以立刻做的零门槛动作是？',
+      phase: '夜晚 · 身份重装',
+      title: '明日最小行动',
+      description: '明天，那个正在成为的人\n会自然去做的零门槛动作是？',
       placeholder: '例如：早起喝一杯温水',
+    ),
+    _WizardStep(
+      id: 'yearGoal',
+      phase: '夜晚 · 身份重装',
+      title: '一年镜头',
+      description: '一年后，必须有什么具体事实成立，\n才能证明你已经打破旧模式？',
+      placeholder: '例如：完成并发布了第一件作品',
+    ),
+    _WizardStep(
+      id: 'monthProject',
+      phase: '夜晚 · 身份重装',
+      title: '一月镜头',
+      description: '一个月后，必须有什么事实成立，\n才能让一年镜头仍然可能？',
+      placeholder: '例如：写出第一版内容框架',
+    ),
+    _WizardStep(
+      id: 'constraints',
+      phase: '夜晚 · 身份重装',
+      title: '避坑机制',
+      description: '哪些环境、场景、信息会触发旧习惯？\n你给自己设下的规避规则是什么？',
+      placeholder: '例如：睡前不刷短视频超过 20 分钟',
     ),
   ];
 
@@ -95,7 +123,11 @@ class _RestructureSetupPageState extends ConsumerState<RestructureSetupPage> {
           'fear': draft.fearContent,
           'belief': draft.beliefDraft,
           'identity': draft.identityDraft,
+          'vision': draft.visionText,
           'action': draft.minActionDraft,
+          'yearGoal': draft.yearGoal,
+          'monthProject': draft.monthProject,
+          'constraints': draft.constraints,
         });
 
       _syncControllerText();
@@ -129,6 +161,10 @@ class _RestructureSetupPageState extends ConsumerState<RestructureSetupPage> {
       beliefDraft: _formData['belief'] ?? '',
       identityDraft: _formData['identity'] ?? '',
       minActionDraft: _formData['action'] ?? '',
+      visionText: _formData['vision'] ?? '',
+      yearGoal: _formData['yearGoal'] ?? '',
+      monthProject: _formData['monthProject'] ?? '',
+      constraints: _formData['constraints'] ?? '',
     );
   }
 

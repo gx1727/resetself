@@ -43,7 +43,8 @@ class AppController extends ChangeNotifier {
   bool get hasCompletedInitialRestructure => profile.hasCompletedInitialRestructure;
 
   Future<void> init() async {
-    if (_didInit || _repository == null) {
+    // 已经成功初始化过就不再重复；但失败后允许通过"重新初始化"重试。
+    if (_repository == null || (_didInit && _errorMessage == null)) {
       _isInitializing = false;
       notifyListeners();
       return;
@@ -57,7 +58,9 @@ class AppController extends ChangeNotifier {
     try {
       await _repository.ensureSingleProfile();
       _profile = await _repository.getCurrentProfile();
-    } catch (error) {
+    } catch (error, stackTrace) {
+      debugPrint('[init] failed: $error');
+      debugPrint('$stackTrace');
       _errorMessage = error.toString();
     } finally {
       _isInitializing = false;
@@ -103,6 +106,24 @@ class AppController extends ChangeNotifier {
       _errorMessage = error.toString();
     } finally {
       _isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> reloadProfile() async {
+    final repository = _repository;
+    if (repository == null) {
+      return;
+    }
+
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _profile = await repository.getCurrentProfile();
+    } catch (error) {
+      _errorMessage = error.toString();
+    } finally {
       notifyListeners();
     }
   }

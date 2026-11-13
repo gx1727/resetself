@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/bootstrap/presentation/bootstrap_page.dart';
 import '../../features/checkin/presentation/daily_checkin_page.dart';
 import '../../features/home/presentation/home_page.dart';
+import '../../features/interrupt/presentation/daytime_interrupt_page.dart';
 import '../../features/insights/presentation/insights_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
 import '../../features/onboarding/presentation/vacuum_mode_page.dart';
@@ -84,6 +85,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.dailyCheckin,
         builder: (context, state) => const DailyCheckinPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.daytimeInterrupt,
+        builder: (context, state) => const DaytimeInterruptPage(),
       ),
       GoRoute(
         path: AppRoutes.sos,

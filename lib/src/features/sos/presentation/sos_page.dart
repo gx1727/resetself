@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
 import '../../../app/state/app_controller.dart';
+import '../../../core/copy/neutral_copy_engine.dart';
 import '../../../data/database/database_providers.dart';
 import '../../home/application/home_providers.dart';
 
@@ -47,7 +48,7 @@ class _SosPageState extends ConsumerState<SosPage> {
       }
 
       setState(() {
-        _errorMessage = '这次拉扯还没记下来，你可以再点一次。';
+        _errorMessage = NeutralCopyEngine.sosError();
       });
     } finally {
       if (mounted) {
@@ -106,7 +107,7 @@ class _SosPageState extends ConsumerState<SosPage> {
                               ),
                               const SizedBox(height: 40),
                               Text(
-                                '这不是你的错，\n是旧惯性的防御。',
+                                NeutralCopyEngine.sosIntroTitle(),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -119,7 +120,7 @@ class _SosPageState extends ConsumerState<SosPage> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                '你正试图改变，潜意识感到了害怕。\n深呼吸，告诉系统刚才发生了什么？',
+                                NeutralCopyEngine.sosIntroBody(),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -162,7 +163,7 @@ class _SosPageState extends ConsumerState<SosPage> {
                               if (_isSaving) ...[
                                 const SizedBox(height: 16),
                                 Text(
-                                  '系统正在接住这次波动...',
+                                  NeutralCopyEngine.sosSaving(),
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context)
                                       .textTheme
@@ -225,7 +226,7 @@ class _SosDoneView extends StatelessWidget {
         ),
         const SizedBox(height: 28),
         Text(
-          '已记作一次旧惯性波动',
+          NeutralCopyEngine.sosDoneTitle(),
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: const Color(0xFFE5E5EA),
@@ -234,7 +235,7 @@ class _SosDoneView extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          '刚才发生的是：$selectedLabel\n\n你没有做错什么，系统只是先替你把它接住。',
+          NeutralCopyEngine.sosDoneBody(selectedLabel),
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: const Color(0xFF8E8E93),

@@ -3,20 +3,23 @@ import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
   static const dbName = 'resetself_v1.db';
-  static const dbVersion = 4;
+  static const dbVersion = 6;
 
   Database? _database;
+  Future<Database>? _databaseFuture;
   String? _databasePath;
 
-  Future<Database> get database async {
+  Future<Database> get database {
     final existing = _database;
     if (existing != null) {
-      return existing;
+      return Future.value(existing);
     }
 
-    final opened = await _openDatabase();
-    _database = opened;
-    return opened;
+    // 缓存"打开中的 Future"，避免并发调用各自 openDatabase 同一个文件而报错。
+    return _databaseFuture ??= _openDatabase().then((opened) {
+      _database = opened;
+      return opened;
+    });
   }
 
   Future<String> get databasePath async {
@@ -37,12 +40,14 @@ class AppDatabase {
 
   Future<void> close() async {
     final existing = _database;
+    _database = null;
+    _databaseFuture = null;
+
     if (existing == null) {
       return;
     }
 
     await existing.close();
-    _database = null;
   }
 
   Future<Database> _openDatabase() async {
@@ -87,6 +92,10 @@ class AppDatabase {
         belief_draft TEXT,
         identity_draft TEXT,
         min_action_draft TEXT,
+        vision_text TEXT,
+        year_goal TEXT,
+        month_project TEXT,
+        constraints TEXT,
         is_latest INTEGER DEFAULT 0,
         create_year INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -156,6 +165,7 @@ class AppDatabase {
     await _createDraftTable(db);
     await _createVacuumSettingsTable(db);
     await _createVacuumFocusStateTable(db);
+    await _createIdentityAnchorTable(db);
   }
 
   Future<void> _migrateSchema(
@@ -174,6 +184,100 @@ class AppDatabase {
     if (oldVersion < 4 && newVersion >= 4) {
       await _createVacuumFocusStateTable(db);
     }
+
+    if (oldVersion < 5 && newVersion >= 5) {
+      await _addCurrentAnchorIdToUserProfile(db);
+      await _createIdentityAnchorTable(db);
+      await _seedIdentityAnchorsFromProfile(db);
+    }
+
+    if (oldVersion < 6 && newVersion >= 6) {
+      await _addRestructureComponentColumns(db);
+      await _addInterruptColumnsToVacuumSettings(db);
+    }
+  }
+
+  /// v6：把单日重构从 5 步升级为完整协议后，补齐游戏化 6 组件字段。
+  Future<void> _addRestructureComponentColumns(DatabaseExecutor db) async {
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_record',
+      column: 'vision_text',
+      definition: 'TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_record',
+      column: 'year_goal',
+      definition: 'TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_record',
+      column: 'month_project',
+      definition: 'TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_record',
+      column: 'constraints',
+      definition: 'TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_draft',
+      column: 'vision_text',
+      definition: "TEXT NOT NULL DEFAULT ''",
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_draft',
+      column: 'year_goal',
+      definition: "TEXT NOT NULL DEFAULT ''",
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_draft',
+      column: 'month_project',
+      definition: "TEXT NOT NULL DEFAULT ''",
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_draft',
+      column: 'constraints',
+      definition: "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
+  /// v6：落地"日间打断"能力后，真空设置里补充打断开关与打断时点。
+  Future<void> _addInterruptColumnsToVacuumSettings(
+    DatabaseExecutor db,
+  ) async {
+    await _addColumnIfMissing(
+      db,
+      table: 'vacuum_mode_settings',
+      column: 'interrupt_enabled',
+      definition: 'INTEGER NOT NULL DEFAULT 1',
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'vacuum_mode_settings',
+      column: 'interrupt_times',
+      definition: "TEXT NOT NULL DEFAULT '11:00,13:30,15:15,17:00,19:30,21:00'",
+    );
+  }
+
+  Future<void> _addColumnIfMissing(
+    DatabaseExecutor db, {
+    required String table,
+    required String column,
+    required String definition,
+  }) async {
+    final columns = await db.rawQuery('PRAGMA table_info($table);');
+    final hasColumn = columns.any((row) => (row['name'] as String?) == column);
+    if (!hasColumn) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $definition;');
+    }
   }
 
   Future<void> _createDraftTable(DatabaseExecutor db) async {
@@ -185,6 +289,10 @@ class AppDatabase {
         belief_draft TEXT NOT NULL DEFAULT '',
         identity_draft TEXT NOT NULL DEFAULT '',
         min_action_draft TEXT NOT NULL DEFAULT '',
+        vision_text TEXT NOT NULL DEFAULT '',
+        year_goal TEXT NOT NULL DEFAULT '',
+        month_project TEXT NOT NULL DEFAULT '',
+        constraints TEXT NOT NULL DEFAULT '',
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     ''');
@@ -199,6 +307,8 @@ class AppDatabase {
         gentle_reminder_enabled INTEGER NOT NULL DEFAULT 1,
         reminder_time TEXT NOT NULL DEFAULT '21:30',
         focus_rhythm_label TEXT NOT NULL DEFAULT '每晚一次温和提醒',
+        interrupt_enabled INTEGER NOT NULL DEFAULT 1,
+        interrupt_times TEXT NOT NULL DEFAULT '11:00,13:30,15:15,17:00,19:30,21:00',
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     ''');
@@ -215,5 +325,81 @@ class AppDatabase {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     ''');
+  }
+
+  Future<void> _createIdentityAnchorTable(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS identity_anchor (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        anchor_text TEXT NOT NULL,
+        source TEXT NOT NULL DEFAULT 'manual',
+        is_active INTEGER NOT NULL DEFAULT 1,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_anchor_active ON identity_anchor(is_active);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_anchor_order ON identity_anchor(sort_order);',
+    );
+  }
+
+  Future<void> _addCurrentAnchorIdToUserProfile(DatabaseExecutor db) async {
+    final columns = await db.rawQuery('PRAGMA table_info(user_profile);');
+    final hasColumn = columns.any(
+      (row) => (row['name'] as String?) == 'current_anchor_id',
+    );
+    if (!hasColumn) {
+      await db.execute(
+        'ALTER TABLE user_profile ADD COLUMN current_anchor_id INTEGER;',
+      );
+    }
+  }
+
+  Future<void> _seedIdentityAnchorsFromProfile(DatabaseExecutor db) async {
+    final existing = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM identity_anchor;'),
+    );
+    if ((existing ?? 0) > 0) {
+      return;
+    }
+
+    final profiles = await db.query('user_profile');
+    if (profiles.isEmpty) {
+      return;
+    }
+
+    final profile = profiles.first;
+    final identityText =
+        (profile['identity_text'] as String?)?.trim() ?? '';
+    if (identityText.isEmpty) {
+      return;
+    }
+
+    await db.insert('identity_anchor', {
+      'anchor_text': identityText,
+      'source': 'initial',
+      'is_active': 1,
+      'sort_order': 0,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    });
+
+    final inserted = Sqflite.firstIntValue(
+      await db.rawQuery(
+        'SELECT id FROM identity_anchor WHERE anchor_text = ? LIMIT 1;',
+        [identityText],
+      ),
+    );
+
+    if (inserted != null) {
+      await db.update(
+        'user_profile',
+        {'current_anchor_id': inserted},
+      );
+    }
   }
 }

@@ -1,3 +1,5 @@
+import '../../core/copy/neutral_copy_engine.dart';
+
 class WeeklyReviewSummary {
   const WeeklyReviewSummary({
     required this.matchCount,
@@ -18,23 +20,14 @@ class WeeklyReviewSummary {
   int get totalCheckins => matchCount + partialCount + fullDeviationCount;
 
   String get summaryTitle {
-    if (totalCheckins == 0 && sosCount == 0 && vacuumFocusCount == 0) {
-      return '这一周还没有形成复盘样本';
-    }
-
-    if (vacuumFocusCount >= 3 && matchCount >= fullDeviationCount) {
-      return '这一周已经开始形成稳定回流';
-    }
-
-    if (matchCount >= partialCount + fullDeviationCount) {
-      return '这一周的新身份正在慢慢站稳';
-    }
-
-    if (fullDeviationCount > partialCount) {
-      return '这一周旧惯性的反扑更明显一些';
-    }
-
-    return '这一周处在拉扯中，但已经开始被看见';
+    return NeutralCopyEngine.weeklySummaryTitle(
+      totalCheckins: totalCheckins,
+      sosCount: sosCount,
+      vacuumFocusCount: vacuumFocusCount,
+      matchCount: matchCount,
+      partialCount: partialCount,
+      fullDeviationCount: fullDeviationCount,
+    );
   }
 
   String get summaryBody {
@@ -57,19 +50,10 @@ class WeeklyReviewSummary {
   }
 
   String get positiveSignalTitle {
-    if (vacuumFocusCount == 0 && matchCount == 0) {
-      return '正向回流还在积累中';
-    }
-
-    if (vacuumFocusCount >= 3) {
-      return '你已经开始主动把自己带回来了';
-    }
-
-    if (matchCount >= 2) {
-      return '新的身份匹配开始有连续性了';
-    }
-
-    return '这一周已经出现第一批回流信号';
+    return NeutralCopyEngine.weeklyPositiveSignalTitle(
+      vacuumFocusCount: vacuumFocusCount,
+      matchCount: matchCount,
+    );
   }
 
   String get positiveSignalBody {

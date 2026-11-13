@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
+import '../../../core/copy/neutral_copy_engine.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/vacuum_mode_settings.dart';
 import '../../vacuum/application/vacuum_mode_providers.dart';
@@ -42,9 +43,10 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
       _isSaving = false;
     });
   }
-
-  @override
+@override
   Widget build(BuildContext context) {
+    final copy = CopyStrategy.vacuumMode();
+
     final settingsAsync = ref.watch(vacuumModeSettingsProvider);
 
     return Scaffold(
@@ -117,7 +119,7 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                       children: _focusWindowOptions.map((minutes) {
                         final isSelected = minutes == settings.focusWindowMinutes;
                         return ChoiceChip(
-                          label: Text('$minutes 分钟'),
+                          label: Text(CopyStrategy.vacuumDurationOption(minutes)),
                           selected: isSelected,
                           onSelected: _isSaving
                               ? null
@@ -161,6 +163,17 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                                 settings.copyWith(
                                   gentleReminderEnabled: value,
                                 ),
+                              ),
+                    ),
+                    const SizedBox(height: 12),
+                    _VacuumToggleCard(
+                      title: '日间打断',
+                      subtitle: '在 11:00 / 13:30 / 15:15 / 17:00 / 19:30 / 21:00 提醒你停下来，用 3 分钟看清此刻是在走向新身份，还是退回旧惯性。',
+                      value: settings.interruptEnabled,
+                      onChanged: _isSaving
+                          ? null
+                          : (value) => _saveSettings(
+                                settings.copyWith(interruptEnabled: value),
                               ),
                     ),
                     const SizedBox(height: 12),
@@ -215,24 +228,24 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                     const SizedBox(height: 20),
                     OutlinedButton(
                       onPressed: () => context.go(AppRoutes.vacuumFocus),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('先进入一段真空专注'),
-                          SizedBox(width: 8),
-                          Icon(Icons.air_rounded, size: 18),
+                          Text(copy.enterFocus),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.air_rounded, size: 18),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
                     FilledButton(
                       onPressed: () => context.go(AppRoutes.restructureSetup),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('我准备好了，进入 24h 重构'),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward_rounded, size: 18),
+                          Text(copy.readyCta),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_rounded, size: 18),
                         ],
                       ),
                     ),
@@ -439,6 +452,7 @@ class _VacuumFocusEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final copy = CopyStrategy.vacuumMode();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -468,12 +482,12 @@ class _VacuumFocusEntryCard extends StatelessWidget {
           const SizedBox(height: 14),
           FilledButton.tonal(
             onPressed: onOpenFocus,
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('打开专注进行中'),
-                SizedBox(width: 8),
-                Icon(Icons.waves_rounded, size: 18),
+                Text(copy.enterFocus),
+                const SizedBox(width: 8),
+                const Icon(Icons.waves_rounded, size: 18),
               ],
             ),
           ),
