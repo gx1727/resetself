@@ -10,7 +10,14 @@ import '../../../data/database/database_providers.dart';
 import '../../../data/models/restructure_draft.dart';
 
 class RestructureSetupPage extends ConsumerStatefulWidget {
-  const RestructureSetupPage({super.key});
+  const RestructureSetupPage({
+    super.key,
+    this.prefillFromLastAnswers = false,
+  });
+
+  /// 进入向导时，如果本地没有草稿，则用上一次提交的 9 问回答预填
+  /// （用于"只修改上一次的 9 问回答"）。
+  final bool prefillFromLastAnswers;
 
   @override
   ConsumerState<RestructureSetupPage> createState() => _RestructureSetupPageState();
@@ -111,7 +118,28 @@ class _RestructureSetupPageState extends ConsumerState<RestructureSetupPage> {
 
   Future<void> _loadDraft() async {
     try {
-      final draft = await ref.read(userProfileRepositoryProvider).getRestructureDraft();
+      final repository = ref.read(userProfileRepositoryProvider);
+      var draft = await repository.getRestructureDraft();
+
+      // "只修改上一次的 9 问回答"：本地没有草稿时，用上一次提交的回答回填，
+      // 让用户看到并直接修改原有内容，而不是从空白重新填写。
+      if (!draft.hasAnyInput && widget.prefillFromLastAnswers) {
+        final latest = await repository.getLatestRestructureRecord();
+        if (latest != null) {
+          draft = RestructureDraft(
+            antiVision: latest.antiVision,
+            fearContent: latest.fearContent,
+            beliefDraft: latest.beliefDraft,
+            identityDraft: latest.identityDraft,
+            minActionDraft: latest.minActionDraft,
+            visionText: latest.visionText,
+            yearGoal: latest.yearGoal,
+            monthProject: latest.monthProject,
+            constraints: latest.constraints,
+          );
+        }
+      }
+
       if (!mounted) {
         return;
       }

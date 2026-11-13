@@ -9,6 +9,7 @@ import '../../../data/models/deviation_pattern.dart';
 import '../../../data/models/insight_trend_summary.dart';
 import '../../../data/models/inertia_sample.dart';
 import '../../../data/models/weekly_review_summary.dart';
+import '../../restructure/presentation/restructure_restart_sheet.dart';
 
 enum SampleFilter {
   all('全部'),
@@ -124,6 +125,16 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
           filter == SampleFilter.all ? null : filter.queryValue;
     });
     context.go(_insightsLocation(filter, source: _entrySource));
+  }
+
+  /// 进入 24h 重构前弹出选择层；其它入口保持直接跳转。
+  void _goToRoute(BuildContext context, String route) {
+    if (route == AppRoutes.restructureSetup) {
+      openRestructureRestartFlow(context, ref);
+      return;
+    }
+
+    context.go(route);
   }
 
   @override
@@ -285,7 +296,10 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                       if (samples.isEmpty)
                         _InsightEmptyStateCard(
                           filter: _selectedFilter,
-                          onTap: () => context.go(_emptyStateAction(_selectedFilter).route),
+                          onTap: () => _goToRoute(
+                            context,
+                            _emptyStateAction(_selectedFilter).route,
+                          ),
                         )
                       else
                         for (final (index, sample) in samples.indexed) ...[
@@ -314,7 +328,8 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                         _InsightFollowupCard(
                           filter: _selectedFilter,
                           entrySource: _entrySource,
-                          onTap: () => context.go(
+                          onTap: () => _goToRoute(
+                            context,
                             _followupAction(
                               _selectedFilter,
                               source: _entrySource,

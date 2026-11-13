@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../app/navigation/app_routes.dart';
 import '../../../app/state/app_controller.dart';
 import '../../../core/copy/neutral_copy_engine.dart';
 import '../../../core/widgets/app_page_scaffold.dart';
@@ -11,6 +9,7 @@ import '../../../data/models/identity_anchor.dart';
 import '../../../data/models/restructure_archive_record.dart';
 import '../../../data/models/yearly_archive_record.dart';
 import '../../../data/models/yearly_report_summary.dart';
+import 'restructure_restart_sheet.dart';
 
 final restructureArchiveProvider =
     FutureProvider.autoDispose<List<RestructureArchiveRecord>>((ref) {
@@ -57,7 +56,7 @@ class RestructureHubPage extends ConsumerWidget {
                   identityText: profile.identityText,
                   minAction: profile.todayMinAction,
                   latestRecord: latestRecord,
-                  onTapRefresh: () => context.go(AppRoutes.restructureSetup),
+                  onTapRefresh: () => openRestructureRestartFlow(context, ref),
                 ),
                 if (latestRecord != null) ...[
                   const SizedBox(height: 16),

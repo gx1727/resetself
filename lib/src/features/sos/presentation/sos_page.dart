@@ -7,6 +7,7 @@ import '../../../app/state/app_controller.dart';
 import '../../../core/copy/neutral_copy_engine.dart';
 import '../../../data/database/database_providers.dart';
 import '../../home/application/home_providers.dart';
+import '../../restructure/presentation/restructure_restart_sheet.dart';
 
 class SosPage extends ConsumerStatefulWidget {
   const SosPage({super.key});
@@ -175,7 +176,7 @@ class _SosPageState extends ConsumerState<SosPage> {
                               TextButton(
                                 onPressed: _isSaving
                                     ? null
-                                    : () => context.go(AppRoutes.restructureSetup),
+                                    : () => openRestructureRestartFlow(context, ref),
                                 child: const Text('认为方向错了？重新进入 24h 重构'),
                               ),
                             ],

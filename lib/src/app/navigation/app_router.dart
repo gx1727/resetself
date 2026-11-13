@@ -54,8 +54,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (controller.hasCompletedInitialRestructure &&
           (location == AppRoutes.bootstrap ||
-              location == AppRoutes.onboarding ||
-              location == AppRoutes.restructureSetup)) {
+              location == AppRoutes.onboarding)) {
         return AppRoutes.home;
       }
 
@@ -80,7 +79,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.restructureSetup,
-        builder: (context, state) => const RestructureSetupPage(),
+        builder: (context, state) => RestructureSetupPage(
+          prefillFromLastAnswers:
+              state.uri.queryParameters['mode'] == 'edit',
+        ),
       ),
       GoRoute(
         path: AppRoutes.dailyCheckin,

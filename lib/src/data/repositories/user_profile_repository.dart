@@ -741,6 +741,19 @@ class UserProfileRepository {
     });
   }
 
+  /// 彻底清空所有业务数据，回到"刚安装、还未完成 24h 重构"的状态。
+  ///
+  /// 复用备份恢复时的清表顺序，清空后重建一条空白的 user_profile，
+  /// 保证后续 getCurrentProfile / ensureSingleProfile 仍能正常工作。
+  Future<void> clearAllData() async {
+    final db = await _database.database;
+
+    await db.transaction((txn) async {
+      await _clearTablesForRestore(txn);
+      await _ensureSingleProfileInTransaction(txn);
+    });
+  }
+
   Future<void> _ensureSingleProfileInTransaction(Transaction txn) async {
     final rows = await txn.query('user_profile', limit: 1);
     if (rows.isNotEmpty) {

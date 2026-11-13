@@ -110,6 +110,28 @@ class AppController extends ChangeNotifier {
     }
   }
 
+  /// 彻底清空所有已有数据，用于"重新进入 24h 重构"里的清空重建。
+  Future<void> clearAllAndRestart() async {
+    final repository = _repository;
+    if (repository == null || _isSaving) {
+      return;
+    }
+
+    _isSaving = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await repository.clearAllData();
+      _profile = await repository.getCurrentProfile();
+    } catch (error) {
+      _errorMessage = error.toString();
+    } finally {
+      _isSaving = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> reloadProfile() async {
     final repository = _repository;
     if (repository == null) {
