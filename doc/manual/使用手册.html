@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ResetSelf 使用手册</title>
+<style>
+  :root{
+    --sage:#819B8E; --sage-dark:#5F7A6D; --ink:#2D2D2D; --muted:#5C5D71;
+    --line:#E5E5EA; --bg:#F7F7FB; --card:#FFFFFF; --dark:#1C1C1E;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",system-ui,-apple-system,sans-serif;
+    line-height:1.75; font-size:15px;
+  }
+  a{color:var(--sage-dark); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .hero{
+    background:linear-gradient(160deg,#EFF3F0 0%,#F7F7FB 70%);
+    border-bottom:1px solid var(--line); padding:56px 32px 40px;
+  }
+  .hero-inner{max-width:1040px;margin:0 auto;display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+  .hero img{width:76px;height:76px;border-radius:20px;box-shadow:0 8px 22px rgba(45,45,45,.10);background:#fff}
+  .hero h1{margin:0;font-size:34px;letter-spacing:.5px}
+  .hero p{margin:6px 0 0;color:var(--muted);font-size:15px}
+  .meta{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+  .meta span{
+    background:#fff;border:1px solid var(--line);border-radius:999px;
+    padding:5px 13px;font-size:12.5px;color:var(--muted)
+  }
+  .layout{max-width:1040px;margin:0 auto;display:flex;gap:36px;padding:32px;align-items:flex-start}
+  nav.toc{position:sticky;top:24px;width:216px;flex:0 0 216px;font-size:13.5px}
+  nav.toc div.title{font-weight:600;color:var(--ink);margin-bottom:10px;letter-spacing:.5px}
+  nav.toc a{display:block;color:var(--muted);padding:3.5px 0;border-left:2px solid transparent;padding-left:10px}
+  nav.toc a:hover{color:var(--sage-dark);border-left-color:var(--sage);text-decoration:none}
+  nav.toc a.sub{padding-left:22px;font-size:12.8px;color:#8A8B99}
+  main{flex:1;min-width:0}
+  section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 28px;margin-bottom:22px}
+  h2{margin:0 0 6px;font-size:22px;letter-spacing:.3px}
+  h2 + .lead{margin:0 0 18px;color:var(--muted);font-size:14px}
+  h3{margin:26px 0 8px;font-size:16.5px;padding-left:11px;border-left:3px solid var(--sage)}
+  h4{margin:18px 0 6px;font-size:14.5px;color:#3C3D4A}
+  p{margin:9px 0}
+  ul,ol{margin:8px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{background:#F2F3F7;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.8px;
+       font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#3C3D4A}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.6px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#F4F6F5;font-weight:600;color:#3C3D4A;white-space:nowrap}
+  tr:nth-child(even) td{background:#FCFCFD}
+  .shots{display:flex;gap:20px;flex-wrap:wrap;justify-content:flex-start;margin:18px 0 6px}
+  figure.shot{margin:0;width:254px}
+  figure.shot img{
+    width:100%;display:block;border-radius:20px;border:6px solid var(--dark);
+    box-shadow:0 10px 24px rgba(28,28,30,.16);background:var(--dark)
+  }
+  figcaption{font-size:12.3px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+  .callout{
+    border-radius:12px;padding:13px 16px;margin:14px 0;font-size:13.8px;
+    background:#F3F7F5;border:1px solid #DCE7E1;color:#3D5750
+  }
+  .callout.warn{background:#FBF6EF;border-color:#F0E3D2;color:#6B5638}
+  .callout b{color:inherit}
+  .steps{counter-reset:step;margin:14px 0;padding:0;list-style:none}
+  .steps > li{counter-increment:step;position:relative;padding-left:40px;margin:20px 0}
+  .steps > li::before{
+    content:counter(step);position:absolute;left:0;top:2px;width:26px;height:26px;border-radius:50%;
+    background:var(--sage);color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center
+  }
+  .steps b{display:block;margin-bottom:2px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .kv{background:#FAFBFB;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.4px}
+  .kv b{display:block;color:#3C3D4A;margin-bottom:3px}
+  .tag{display:inline-block;background:#EFF3F0;color:var(--sage-dark);border-radius:999px;padding:2px 10px;font-size:12px;margin:0 6px 6px 0}
+  footer{max-width:1040px;margin:0 auto;padding:8px 32px 56px;color:#8A8B99;font-size:12.6px}
+  @media (max-width:860px){
+    .layout{flex-direction:column;padding:20px}
+    nav.toc{position:static;width:100%;flex:none;border-bottom:1px solid var(--line);padding-bottom:14px}
+    nav.toc a{display:inline-block;padding:3px 10px;border-left:none}
+    nav.toc a.sub{display:none}
+    .grid2{grid-template-columns:1fr}
+    section{padding:20px 18px}
+    figure.shot{width:calc(50% - 10px)}
+  }
+  @media print{
+    body{background:#fff}
+    nav.toc{display:none}
+    section{break-inside:avoid;border:none;padding:0;margin-bottom:18px}
+    .hero{padding:20px 0}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <img src="../../design/logo/png/resetself-mark-192.png" alt="ResetSelf">
+    <div>
+      <h1>ResetSelf 使用手册</h1>
+      <p>晨间探索 → 日间观察 → 晚间综合：把「想坚持却没坚持」的瞬间，变成可以回看的样本。</p>
+      <div class="meta">
+        <span>版本 1.0.0+1</span>
+        <span>平台 Android</span>
+        <span>Flutter 3.41.9 · Dart 3.11.5</span>
+        <span>截图设备 Medium_Phone · 1080×2400</span>
+        <span>整理日期 2026-11-14</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc">
+  <div class="title">目录</div>
+  <a href="#intro">一、产品与核心闭环</a>
+  <a href="#quick">二、5 分钟快速上手</a>
+  <a href="#pages">三、页面详解</a>
+  <a class="sub" href="#p-welcome">1 启动页与欢迎页</a>
+  <a class="sub" href="#p-vacuum">2 认知真空准备区</a>
+  <a class="sub" href="#p-focus">3 真空专注页</a>
+  <a class="sub" href="#p-morning">4 晨间探索</a>
+  <a class="sub" href="#p-interrupt">5 日间观察</a>
+  <a class="sub" href="#p-setup">6 晚间综合向导</a>
+  <a class="sub" href="#p-home">7 首页</a>
+  <a class="sub" href="#p-checkin">8 每日校验</a>
+  <a class="sub" href="#p-feedback">9 行动反馈</a>
+  <a class="sub" href="#p-sos">10 SOS 急救</a>
+  <a class="sub" href="#p-insights">11 惯性样本库</a>
+  <a class="sub" href="#p-hub">12 重构归档</a>
+  <a class="sub" href="#p-settings">13 设置</a>
+  <a class="sub" href="#p-after">14 走完一圈之后</a>
+  <a href="#data">四、数据、备份与隐私</a>
+  <a href="#faq">五、常见问题</a>
+  <a href="#appendix">六、附录</a>
+</nav>
+
+<main>
+
+<section id="intro">
+  <h2>一、产品与核心闭环</h2>
+  <p class="lead">ResetSelf 把「一日身份重构」做成了一套本地优先的日常系统。</p>
+  <p>它不靠打卡与打分，而是用四段能力把「改变」变得可追溯：</p>
+  <ul>
+    <li><b>探索</b>：晨间用 14 个问题做心理挖掘，写下的是「探索原稿」，不是一句结论。</li>
+    <li><b>观察</b>：白天用 6 个示例时点加 3 条追加追问，拿真实行为去核对晨间的解释。</li>
+    <li><b>综合</b>：晚间用 11 步向导，把观察整理成明天可以尝试的方向与最小启动行动。</li>
+    <li><b>接住与回流</b>：随时可用的 SOS 急救接住最强烈的拉扯；每日校验与行动反馈把结果沉淀成样本。</li>
+  </ul>
+  <h3>核心闭环</h3>
+  <table>
+    <tr><th>阶段</th><th>入口</th><th>你会做什么</th></tr>
+    <tr><td>① 降噪准备</td><td>认知真空准备区</td><td>定专注时长（60 / 90 / 120 分钟）、降噪偏好、温和提醒与六个日间打断时点</td></tr>
+    <tr><td>② 晨间探索</td><td>晨间探索页</td><td>回答 14 个心理挖掘问题，写成探索原稿，可标记「待回看」</td></tr>
+    <tr><td>③ 日间观察</td><td>日间打断页</td><td>在示例时点用真实行为核对晨间的解释，并粗略归类</td></tr>
+    <tr><td>④ 晚间综合</td><td>晚间综合向导</td><td>11 步把观察整理成反愿景、新身份、一年／一月目标与最小启动行动</td></tr>
+    <tr><td>⑤ 日常对照</td><td>首页</td><td>看当前核心身份、最小启动行动、反愿景赌注与今日状态</td></tr>
+    <tr><td>⑥ 状态校准</td><td>每日校验</td><td>三档选一：完全匹配 / 部分偏离 / 完全偏离</td></tr>
+    <tr><td>⑦ 行动反馈</td><td>行动反馈页</td><td>尝试了什么 → 发生了什么 → 得到什么认识 → 下一次调整什么</td></tr>
+    <tr><td>⑧ 样本沉淀</td><td>惯性样本库</td><td>查看最近 7 天的来源分布、高频偏离模式与正向回流信号</td></tr>
+  </table>
+  <div class="callout">「晨间探索 → 日间观察 → 晚间综合」这套方法基于 Dan Koe 的文章 <i>How to fix your entire life in 1 day</i>。原文建议留出一整天、使用纸笔并自主思考；ResetSelf 提供数字记录，也允许跨日继续。最小启动行动、周回顾与专注工具是产品适配或扩展。应用内随时可以从「方法说明」看到这段说明与原链接。</div>
+  <div class="callout">本手册所有截图都在 Android 模拟器（Medium_Phone，1080×2400，420dpi）中真机运行截取，截图里的身份、信念与样本均为演示数据。</div>
+</section>
+
+<section id="quick">
+  <h2>二、5 分钟快速上手</h2>
+  <p class="lead">第一次打开应用，按下面几步走完，就能进入日常使用状态。</p>
+  <ol class="steps">
+    <li><b>打开应用，进入欢迎页</b>启动页会先完成本地数据库与流程状态的初始化（「正在初始化本地数据和流程状态...」），随后自动进入欢迎页。欢迎页有两个入口：<b>先看认知真空准备区</b>与<b>开启 24h 重构向导</b>。
+      <figure class="shot"><img src="images/s01_onboarding.png" alt="欢迎页"><figcaption>欢迎页：先看方法说明，再决定从准备区还是直接开始</figcaption></figure>
+    </li>
+    <li><b>（可选）先读一次方法说明</b>点欢迎页上的「晨间探索 → 日间观察 → 晚间综合 · 方法说明」，可以看到这套方法的来源与产品适配说明，也可以复制原文链接。
+      <figure class="shot"><img src="images/s02_method_note.png" alt="方法说明"><figcaption>方法说明弹层：来源、适配说明与原链接</figcaption></figure>
+    </li>
+    <li><b>进认知真空准备区，定好节奏</b>设定建议专注时段（60 / 90 / 120 分钟）、降噪状态、温和提醒、日间打断与提醒时间。所有改动都会即时保存。
+      <figure class="shot"><img src="images/s03_vacuum_top.png" alt="认知真空准备区"><figcaption>准备区顶部：快速进入专注卡 + 专注时长</figcaption></figure>
+    </li>
+    <li><b>进入晨间探索，回答 14 个问题</b>这些问题是用来帮你产生答案的，不是让你直接给出结论。答不出可以先跳过，也可以把某题标成「待回看」，之后再补。
+      <figure class="shot"><img src="images/s08_morning_top.png" alt="晨间探索"><figcaption>晨间探索：14 问 + 可标记「待回看」</figcaption></figure>
+    </li>
+    <li><b>白天做几次日间观察</b>在示例时点停下来，写下此刻的觉察，并粗略归类为「成长性行为 / 逃避性行为 / 其他／待核对」。
+      <figure class="shot"><img src="images/s12_interrupt_top.png" alt="日间打断"><figcaption>日间打断：时点、当次问题与手动记录入口</figcaption></figure>
+    </li>
+    <li><b>晚上走完 11 步晚间综合</b>按「理解当前模式 → 选择想建设的生活 → 安排行动与边界」三个阶段，把观察整理成一句可确认的方向。
+      <figure class="shot"><img src="images/s16_setup_step1.png" alt="晚间综合"><figcaption>晚间综合第 1 步：反愿景（Anti-Vision）</figcaption></figure>
+    </li>
+    <li><b>每天回到首页做一次今日校验</b>首页会常驻你的当前身份与最小启动行动；点「进行今日校验」，在「完全匹配 / 部分偏离 / 完全偏离」中选最接近的一档。
+      <figure class="shot"><img src="images/s21_home_top.png" alt="首页"><figcaption>首页顶部：当前核心身份、最小启动行动与今日状态</figcaption></figure>
+    </li>
+  </ol>
+  <div class="callout">日常只需要两件事：<b>白天被打断时做 3 分钟观察，晚上做一次今日校验（或一次行动反馈）。</b>其他页面都是围绕这两件事的回看与归档。</div>
+</section>
+
+<section id="pages">
+  <h2>三、页面详解</h2>
+  <p class="lead">下面按你实际会走到的顺序，逐页说明用途、可操作项与页面文案。</p>
+</section>
+
+<section id="p-welcome">
+  <h3>1. 启动页与欢迎页</h3>
+  <p>启动页（<code>/bootstrap</code>）只做一件事：初始化本地数据库与流程状态，文案是「正在初始化本地数据和流程状态...」。若初始化失败，会提示「初始化失败，请重试数据库与本地配置。」并提供<b>重新初始化</b>按钮。</p>
+  <p>初始化完成后会自动判断：已经完成过首次重构 → 直达首页；否则 → 进入欢迎页。</p>
+  <h4>欢迎页（<code>/welcome</code>）</h4>
+  <div class="shots">
+    <figure class="shot"><img src="images/s01_onboarding.png" alt="欢迎页"><figcaption>欢迎页：两个入口，决定你的第一步</figcaption></figure>
+    <figure class="shot"><img src="images/s02_method_note.png" alt="方法说明"><figcaption>方法说明：来源、适配说明与「复制原文链接」</figcaption></figure>
+  </div>
+  <ul>
+    <li>主标题：<b>欢迎来到认知真空区。</b></li>
+    <li>副标题：<i>把想坚持却没有坚持的瞬间，记下来，作为可以回看的样本。</i></li>
+    <li>方法说明入口：<b>晨间探索 → 日间观察 → 晚间综合 · 方法说明</b>。</li>
+    <li>提示卡「接下来这段时间属于你自己」：<i>如果方便，可以先减少手机干扰。应用只会记录你的降噪偏好，不会替你屏蔽其他应用或系统通知。</i></li>
+    <li>两个入口按钮：<b>先看认知真空准备区</b>（进入 <code>/vacuum</code>）、<b>开启 24h 重构向导</b>（进入 <code>/restructure/morning</code>）。</li>
+  </ul>
+  <h4>方法说明弹层</h4>
+  <p>标题「关于这套方法」，正文说明这套方法来自 Dan Koe 的原文，并明确写出产品做了哪些适配或扩展；底部是原文链接与<b>复制原文链接</b>按钮，复制成功会提示「来源链接已复制」。</p>
+  <div class="callout">在完成首次重构之前，只能访问欢迎页、真空准备区、真空专注页和晨间／晚间向导，其余页面会自动跳回欢迎页——这是为了避免你在身份还没写清楚时就被数据页面干扰。</div>
+</section>
+
+<section id="p-vacuum">
+  <h3>2. 认知真空准备区</h3>
+  <p>路由 <code>/vacuum</code>。标题是「认知真空准备区」，页面说明：<i>这一页开始具备本地记忆能力。你选择的专注时段、降噪偏好和提醒节奏，都会被温柔记住。</i>所有改动<b>即时保存</b>，保存中会显示「正在记住这次真空模式偏好...」。</p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s03_vacuum_top.png" alt="准备区顶部"><figcaption>顶部：快速进入专注卡与专注时长</figcaption></figure>
+    <figure class="shot"><img src="images/s04_vacuum_mid.png" alt="准备区中部"><figcaption>中部：三个开关与日间打断时点</figcaption></figure>
+    <figure class="shot"><img src="images/s05_vacuum_bottom.png" alt="准备区底部"><figcaption>底部：提醒时间、专注节奏与准备清单</figcaption></figure>
+  </div>
+  <h4>可以调整的六项</h4>
+  <table>
+    <tr><th>项目</th><th>可选项</th><th>说明</th></tr>
+    <tr><td>建议专注时段</td><td>60 / 90 / 120 分钟</td><td>决定真空专注页的安静区长度</td></tr>
+    <tr><td>降噪状态</td><td>开 / 关</td><td>这里只记录你的降噪偏好；应用不会自动屏蔽其他应用或系统通知</td></tr>
+    <tr><td>温和提醒</td><td>开 / 关</td><td>在专注时段中只保留低频、无压迫感的提示方式</td></tr>
+    <tr><td>日间打断</td><td>开 / 关</td><td>按你设定的时点安排提醒；关闭通知后仍可手动记录</td></tr>
+    <tr><td>日间打断时点</td><td>默认 11:00 / 13:30 / 15:15 / 17:00 / 19:30 / 21:00</td><td>这六个时点是产品示例，不是原文规定；可逐个改动，提醒会按新时点重排</td></tr>
+    <tr><td>提醒时间</td><td>07:30 / 12:30 / 21:30</td><td>温和提醒的落点时间</td></tr>
+    <tr><td>专注节奏</td><td>每晚一次温和提醒 / 工作日提醒 / 只在重构日提醒</td><td>决定提醒出现的频率</td></tr>
+  </table>
+  <h4>页面上的两类清单</h4>
+  <div class="grid2">
+    <div class="kv"><b>可选准备（不是开始条件）</b>把社交软件、短视频和工作通知静音，时长按自己的情况决定 / 尽量找一个少被打断的地方，找不到也可以直接开始 / 准备纸笔或耳机，只留下真正需要的工具</div>
+    <div class="kv"><b>后续会接进来的能力</b>系统级专注权限引导 / 重构时段建议与专注提醒 / 首页回流与专注状态同步</div>
+  </div>
+  <h4>底部两个入口</h4>
+  <ul>
+    <li><b>先进入一段真空专注</b>：跳转真空专注页 <code>/vacuum/focus</code>。</li>
+    <li><b>我准备好了，进入 24h 重构</b>：跳转晨间探索页 <code>/restructure/morning</code>。</li>
+  </ul>
+</section>
+
+<section id="p-focus">
+  <h3>3. 真空专注页</h3>
+  <p>路由 <code>/vacuum/focus</code>。未开始时标题是「准备开始专注」，开始后变成「专注进行中」，并显示「预计还有 N 分钟」。首页和这一页会同步显示同一段专注状态。</p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s06_vacuum_focus_idle.png" alt="未开始"><figcaption>未开始：准备开始专注</figcaption></figure>
+    <figure class="shot"><img src="images/s07_vacuum_focus_active.png" alt="进行中"><figcaption>进行中：专注进行中，预计还有 N 分钟</figcaption></figure>
+  </div>
+  <h4>页面上有什么</h4>
+  <ul>
+    <li><b>当前真空节奏</b>卡：未开始时显示「N 分钟安静区」与「提醒时间 xx:xx · 节奏」；进行中显示「预计还有 N 分钟」与「开始于 xx:xx · 节奏」。</li>
+    <li><b>当前执行方式</b>卡：用状态标签展示「降噪已开启 / 手动降噪中 / 当前状态已开始」以及「温和提醒开启 / 提醒已关闭」，每个标签下面都有一句对应的说明。</li>
+    <li><b>进入前只确认 3 件事</b>：按当前设置动态生成，例如「接下来 90 分钟内，不处理社交消息和碎片输入」。</li>
+    <li>主按钮 <b>开始这段专注 / 结束这段专注</b>；未开始时另有次按钮 <b>继续进入 24h 重构</b>；底部返回入口是<b>先回首页</b>（未完成首次重构时为「回到真空准备区」）。</li>
+  </ul>
+  <div class="callout">这一页已经和首页联动：开始后首页会看到当前真空节奏正在进行；这段专注结束后，首页回到未开始状态，你可以再决定是否进入下一段。每结束一段专注，惯性样本库会沉淀一条来源为「真空专注」的样本。</div>
+</section>
+
+<section id="p-morning">
+  <h3>4. 晨间探索</h3>
+  <p>路由 <code>/restructure/morning</code>。页面顶部显示「已回答 N / 14」，右上角是<b>稍后继续</b>。这一段回答的是<b>探索原稿</b>——用来帮你产生答案，而不是让你直接给出结论。</p>
+  <p>页面说明：<i>这些问题是用来帮你产生答案的，不是让你直接给出结论。建议留出 15–30 分钟，一次坐下来回答；答不出可以先跳过，之后再回来补充。</i></p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s08_morning_top.png" alt="晨间探索顶部"><figcaption>顶部：进度计数、说明与前几个问题</figcaption></figure>
+    <figure class="shot"><img src="images/s09_morning_answered.png" alt="已作答"><figcaption>写下解释，并可把某题标成「待回看」</figcaption></figure>
+    <figure class="shot"><img src="images/s10_morning_bottom.png" alt="后半段问题"><figcaption>后半段问题：从「身份」转向「想建设的生活」</figcaption></figure>
+    <figure class="shot"><img src="images/s11_morning_saved_sheet.png" alt="保存弹层"><figcaption>完成后：原稿已保存，并给出三条岔路</figcaption></figure>
+  </div>
+  <h4>14 个问题</h4>
+  <table>
+    <tr><th>#</th><th>问题</th><th>输入提示</th></tr>
+    <tr><td>1</td><td>你已经学会与之共处的、迟钝而持续的不满是什么？</td><td>不是深刻的痛苦，而是你已经学会忍受的东西。</td></tr>
+    <tr><td>2</td><td>你反复抱怨却从未真正改变的是什么？</td><td>写下过去一年里你最常说出的三个抱怨。</td></tr>
+    <tr><td>3</td><td>如果有人观察你的行为（而不是你的语言），他会得出你真正想要什么？</td><td>针对上面每个抱怨，分别写一句。</td></tr>
+    <tr><td>4</td><td>关于你当前生活的什么真相，如果要承认给你深深尊敬的人听，会让你难以忍受？</td><td>越难说出口，往往越接近核心。</td></tr>
+    <tr><td>5</td><td>如果未来五年绝对没有任何改变，描述一个普通的星期二。</td><td>在哪里醒来？身体感觉如何？第一个念头是什么？谁在身边？9 点到 18 点做什么？22 点感觉如何？</td></tr>
+    <tr><td>6</td><td>把时间拉到十年，你错过了什么？</td><td>哪些机会关闭了？谁放弃了你？当你不在场时，人们会怎么谈论你？</td></tr>
+    <tr><td>7</td><td>你走到了生命尽头，过的是安全版本的人生，从未打破模式。代价是什么？</td><td>你从未允许自己感受、尝试或成为什么？</td></tr>
+    <tr><td>8</td><td>你生活中谁已经在过你刚刚描述的未来？</td><td>有谁在同一轨道上领先你五年、十年、二十年？想到自己会成为他们，你有什么感觉？</td></tr>
+    <tr><td>9</td><td>为了真正改变，你必须放弃什么身份？</td><td>「我是那种会……的人。」不再成为那种人，会让你在社交上付出什么代价？</td></tr>
+    <tr><td>10</td><td>你还没有改变的最尴尬理由是什么？</td><td>那个会让你听起来软弱、害怕或懒惰，而不是合理的理由。</td></tr>
+    <tr><td>11</td><td>如果当前的行为是一种自我保护，你到底在保护什么？</td><td>这种保护正在让你付出什么代价？</td></tr>
+    <tr><td>12</td><td>先忘掉现实可行性：如果三年后你真正想要的生活降临，一个普通星期二是什么样？</td><td>用和第 5 题同样的细节程度描述。</td></tr>
+    <tr><td>13</td><td>为了让那种生活自然而不是强迫，你必须相信关于自己的什么？</td><td>写下身份陈述：「我是那种会……的人。」</td></tr>
+    <tr><td>14</td><td>如果你已经是那个人，这周你会做的一件事是什么？</td><td>一件具体、本周内就能开始的事。</td></tr>
+  </table>
+  <h4>怎么用这一页</h4>
+  <ul>
+    <li><b>逐题写解释</b>：每题提示是「先写下你的解释。白天可以用实际发生的事情再核对它。」</li>
+    <li><b>标记「待回看」</b>：每题右侧的 <span class="tag">待回看</span> 标签可以把这题标出来，晚间综合时再回看。</li>
+    <li><b>草稿自动保存</b>：停笔后会自动保存，页面底部会显示「正在保存原稿…」「有待保存的改动」等状态；保存失败时提示「原稿未保存成功，内容仍在页面里，请重试。」并给出<b>重试</b>。</li>
+    <li><b>完成晨间挖掘</b>：点底部主按钮后，弹出「晨间探索原稿已保存」，并给出三条岔路：<b>进入日间打断（白天观察）</b>、<b>直接进入晚间综合</b>、<b>先停在这里，稍后继续</b>。</li>
+  </ul>
+  <div class="callout">保存弹层里写着接下来该做什么：<i>接下来是白天：用几次短暂停顿，观察自己在真实生活里怎样行动；晚上再回到综合，把今天的观察变成方向。</i></div>
+</section>
+
+<section id="p-interrupt">
+  <h3>5. 日间观察（日间打断）</h3>
+  <p>路由 <code>/interrupt</code>。副标题：<i>在白天，用几次短暂停顿看清：此刻的行为，更靠近你想成为的样子，还是更靠近旧有的模式？</i>顶部会显示「今天已记录 N 次自省」，并注明「原文示例时点，可按日程调整；也可以随时手动记录。」</p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s12_interrupt_top.png" alt="日间打断顶部"><figcaption>顶部：提醒关闭提示、记录计数与当前问题</figcaption></figure>
+    <figure class="shot"><img src="images/s13_interrupt_questions.png" alt="观察问题列表"><figcaption>「选择／切换观察问题」：6 个主问题 + 3 条追加追问</figcaption></figure>
+    <figure class="shot"><img src="images/s14_interrupt_input.png" alt="写下觉察"><figcaption>写下觉察，并粗略归类为成长性 / 逃避性行为</figcaption></figure>
+    <figure class="shot"><img src="images/s15_interrupt_history.png" alt="今天的自省"><figcaption>今天留下的自省：来源与时间都会沉淀下来</figcaption></figure>
+  </div>
+  <h4>6 个主问题（示例时点）</h4>
+  <table>
+    <tr><th>时点</th><th>自省问题</th></tr>
+    <tr><td>11:00</td><td>我现在通过正在做的事，在逃避什么？</td></tr>
+    <tr><td>13:30</td><td>如果有人拍下过去两个小时，会得出我想从人生中得到什么？</td></tr>
+    <tr><td>15:15</td><td>我是在走向自己讨厌的人生，还是想要的人生？</td></tr>
+    <tr><td>17:00</td><td>我正在假装不重要的、最重要的事情是什么？</td></tr>
+    <tr><td>19:30</td><td>我今天有哪些事是出于身份保护，而不是真正渴望？</td></tr>
+    <tr><td>21:00</td><td>今天什么时候我感觉最有生命力？什么时候最死气沉沉？</td></tr>
+  </table>
+  <h4>3 条追加追问（随时可用）</h4>
+  <table>
+    <tr><th>场景</th><th>追问</th></tr>
+    <tr><td>通勤 · 散步</td><td>如果我不再需要别人把我看成那个旧身份，我的生活会发生什么改变？</td></tr>
+    <tr><td>慢下来时</td><td>我在生活的哪些地方，用生命力换取安全？</td></tr>
+    <tr><td>睡前</td><td>我想成为的那个人，最小的版本是什么？明天我就能成为吗？</td></tr>
+  </table>
+  <h4>怎么记录一次观察</h4>
+  <ol class="steps">
+    <li><b>点「选择／切换观察问题」</b>展开问题列表，切到对应时点的问题（切换时会各题独立保存草稿）。</li>
+    <li><b>写下你此刻的觉察</b>提示是「刚才发生了什么？你做了什么？它可能在满足或保护什么？也可以写"暂时不知道"。」</li>
+    <li><b>粗略归类（可跳过）</b>在「成长性行为 / 逃避性行为 / 其他／待核对」里选一个，再点<b>记录这次自省</b>。</li>
+  </ol>
+  <p>记录成功后显示「这次自省已经被记下来」——<i>它不是评判，而是一条帮你看清模式出现时段的记录。</i>记录会出现在页面下方的「今天留下的自省」列表中，同时进入惯性样本库。</p>
+  <div class="callout warn">如果日间打断没有开启，页面会显示提示卡「日间提醒已关闭」：<i>日间通知已关闭。你仍可以手动查看问题、回看原稿并记录观察。</i>点击<b>去认知真空准备区</b>即可打开开关。另外「回看晨间原稿」按钮可以随时把晨间原稿调出来对照。</div>
+</section>
+
+<section id="p-setup">
+  <h3>6. 晚间综合向导</h3>
+  <p>路由 <code>/restructure/setup</code>（带 <code>?mode=edit</code> 时用于修改上一次的回答）。向导共 <b>11 步</b>，分三个阶段：<b>理解当前模式 → 选择想建设的生活 → 安排行动与边界</b>。顶部是 11 格进度条，右上角有<b>回顾</b>与<b>稍后继续</b>。</p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s16_setup_step1.png" alt="第 1 步"><figcaption>第 1 步：反愿景（Anti-Vision）</figcaption></figure>
+    <figure class="shot"><img src="images/s17_review_sheet.png" alt="探索回顾"><figcaption>「先回看晨间原稿与日间观察」：把材料摊在面前</figcaption></figure>
+    <figure class="shot"><img src="images/s18_setup_step3.png" alt="第 3 步"><figcaption>第 3 步：内在敌人（内部模式）</figcaption></figure>
+    <figure class="shot"><img src="images/s19_setup_step8.png" alt="第 8 步"><figcaption>第 8 步：每日杠杆（自动带入月项目上下文）</figcaption></figure>
+    <figure class="shot"><img src="images/s20_setup_step11.png" alt="第 11 步"><figcaption>第 11 步：环境避坑规则，按钮变为「保存本次反思，返回主页」</figcaption></figure>
+  </div>
+  <h4>11 个问题</h4>
+  <table>
+    <tr><th>#</th><th>阶段</th><th>标题</th><th>问题</th></tr>
+    <tr><td>1</td><td>理解当前模式</td><td>反愿景（Anti-Vision）</td><td>回顾晨间写下的反愿景探索，把它提炼成一句：你不愿继续走向的生活是什么？</td></tr>
+    <tr><td>2</td><td>理解当前模式</td><td>深层恐惧与自我保护</td><td>回看这些观察，如果某些行为是在保护自己，它们在保护什么？带来了什么，也付出了什么？</td></tr>
+    <tr><td>3</td><td>理解当前模式</td><td>内在敌人（内部模式）</td><td>经过这些观察，哪个反复出现的内部模式或信念，最像是在让你停留原地？</td></tr>
+    <tr><td>4</td><td>选择想建设的生活</td><td>新身份叙事</td><td>为了让这种生活逐渐变得自然，你想以怎样的方式生活和行动？</td></tr>
+    <tr><td>5</td><td>选择想建设的生活</td><td>愿景 MVP</td><td>用一句话概括你正在建设、走向什么，同时知道它还会继续演化。</td></tr>
+    <tr><td>6</td><td>安排行动与边界</td><td>一年镜头</td><td>一年后，希望有什么具体事实成立，让你看见自己正在接近想要的生活？</td></tr>
+    <tr><td>7</td><td>安排行动与边界</td><td>一月项目</td><td>为了推进这个一年目标，这个月需要学习什么、练习什么，或做出什么成果？</td></tr>
+    <tr><td>8</td><td>安排行动与边界</td><td>每日杠杆</td><td>为了推进这个月项目，明天优先做哪 2–3 个行动？可为每项安排时间块。每行写一项。</td></tr>
+    <tr><td>9</td><td>安排行动与边界</td><td>最小启动行动</td><td>从上面某一项里，缩小到此刻就能开始的那一个最小一步是什么？</td></tr>
+    <tr><td>10</td><td>安排行动与边界</td><td>价值约束</td><td>为了实现这个愿景，你不愿牺牲什么？这些边界会影响你怎样安排投入与取舍。</td></tr>
+    <tr><td>11</td><td>安排行动与边界</td><td>环境避坑规则</td><td>哪些环境、场景、信息会触发旧习惯？你给自己设下的规避规则是什么？</td></tr>
+  </table>
+  <h4>四个容易被忽略的设计</h4>
+  <ul>
+    <li><b>先回看材料</b>：第 1 步上方有<b>先回看晨间原稿与日间观察</b>按钮，会展开「晚间综合前的回顾」，可切换观察日期范围、回看晨间原稿与日间观察，并可直接<b>补充／修改晨间原稿</b>或<b>补记一次日间观察</b>。</li>
+    <li><b>上下文自动带入</b>：从第 6 步起会自动显示相关方向，例如第 8 步（每日杠杆）上方是「月项目：…」、第 9 步（最小启动行动）上方是「每日杠杆：…」，这些都可以折叠收进「回看相关方向」。</li>
+    <li><b>温和提示</b>：第 3 步（内在敌人）会提醒「先作为待核对的解释：哪些观察支持它？」；第 4 步（新身份叙事）会提醒「身份表达可以随经验调整，不必现在就完全做到。」</li>
+    <li><b>草稿自动保存</b>：底部状态会显示「正在保存草稿…」「有待保存的改动」「当前内容已保存」，中途退出不会丢。</li>
+  </ul>
+  <p>按钮：非最后一步是<b>保存并进入下一步</b>，最后一步变成<b>保存本次反思，返回主页</b>（保存中显示「正在保存本次反思...」）。最后一步还会出现一个可选输入框「这次为什么调整（可选）」，提示是「哪次经历或反馈让你改变了方向？」。</p>
+  <div class="callout">提交后：身份与最小启动行动写入用户档案、11 项回答进入重构归档、内部模式进入信念表、新身份进入身份库，并自动生成一条「首次重构」样本。保存成功会提示「本次方向已保存。接下来，在生活中尝试，再根据反馈调整。」</div>
+</section>
+
+<section id="p-home">
+  <h3>7. 首页</h3>
+  <p>路由 <code>/home</code>。首页是整个系统的中枢：上面是身份与今日状态，中间是反愿景、日间观察与行动反馈入口，下面是本周摘要、智能建议与真空节奏。</p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s21_home_top.png" alt="首页顶部"><figcaption>顶部：当前核心身份、最小启动行动与今日状态</figcaption></figure>
+    <figure class="shot"><img src="images/s22_home_mid.png" alt="首页中部"><figcaption>中部：反愿景赌注、日间打断与行动反馈入口</figcaption></figure>
+    <figure class="shot"><img src="images/s23_home_bottom.png" alt="首页底部"><figcaption>底部：本周摘要、智能建议与当前真空节奏</figcaption></figure>
+  </div>
+  <h4>顶部三个入口</h4>
+  <ul>
+    <li>左上角气流图标 → 认知真空准备区（<code>/vacuum</code>）。</li>
+    <li>右上角归档图标（带样本计数角标）→ 惯性样本库（<code>/insights</code>）。</li>
+    <li>右上角设置图标 → 设置（<code>/settings</code>）。</li>
+  </ul>
+  <h4>页面上的卡片</h4>
+  <table>
+    <tr><th>卡片</th><th>内容</th><th>点击后</th></tr>
+    <tr><td>当前核心身份 / 最小启动行动</td><td>来自晚间综合的「新身份叙事」与「最小启动行动」；卡片底部标注「这一步服务的方向」</td><td>修改最小启动行动（弹出编辑面板）</td></tr>
+    <tr><td>今日状态</td><td>未校验 → 今天还没有开始校准；已校验 → 今天已完成校验：完全匹配 / 部分偏离 / 完全偏离</td><td>进行今日校验 / 重新校准今天状态（<code>/checkin</code>）</td></tr>
+    <tr><td>反愿景赌注</td><td>如果什么都不改变，这就是你要走向的生活：…（还没写下时提示先完成一次重构）</td><td>重构归档（<code>/restructure</code>）</td></tr>
+    <tr><td>日间打断</td><td>今天已记录 N 次自省 / 下一个时点：xx:xx / 还没到下一个打断时点 / 日间提醒已关闭</td><td>日间打断（<code>/interrupt</code>）</td></tr>
+    <tr><td>行动反馈</td><td>最近一次尝试与最近一次观察；没有记录时提示「还没有留下反馈记录。完成一次行动后，从这里记下它。」</td><td>行动反馈（<code>/feedback</code>）</td></tr>
+    <tr><td>最近一次惯性样本</td><td>来源标签（SOS急救 / 每日偏离 / 首次重构 / 真空专注 / 惯性样本）+ 内容 + 时间</td><td>—</td></tr>
+    <tr><td>本周状态摘要</td><td>最近 7 天的匹配、偏离、SOS、专注统计</td><td>惯性样本库</td></tr>
+    <tr><td>本周正向回流</td><td>最近 7 天完全匹配与真空专注的次数</td><td>惯性样本库（真空专注视角）</td></tr>
+    <tr><td>现在先做这个</td><td>按当前状态动态生成的建议（专注中、需校验、SOS 后、偏离后、连续匹配等十余种分支）</td><td>对应动作（回到专注页 / 去做校验 / 看偏离记录等）</td></tr>
+    <tr><td>当前真空节奏（深色）</td><td>专注进行中 / N 分钟安静区、降噪与提醒状态；上一段结束时提示「上一段专注已经结束。现在只回到这一个动作：…」</td><td>真空专注页；也可直接开始 / 结束专注</td></tr>
+  </table>
+  <p>右下角常驻的<b>SOS 悬浮按钮</b>可以随时进入急救页（<code>/sos</code>），不需要先回到某个入口。</p>
+</section>
+
+<section id="p-checkin">
+  <h3>8. 每日校验</h3>
+  <p>路由 <code>/checkin</code>。标题是<b>「今天的行为，匹配你的新身份吗？」</b>，副标题是「无需自责，系统只做状态校准」。三个选项含义如下：</p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s24_checkin.png" alt="三个选项"><figcaption>三个选项：完全匹配 / 部分偏离 / 完全偏离</figcaption></figure>
+    <figure class="shot"><img src="images/s25_checkin_done.png" alt="完成反馈"><figcaption>提交后的完成反馈（约 1.6 秒后回到首页）</figcaption></figure>
+  </div>
+  <table>
+    <tr><th>选项</th><th>提交后的反馈</th><th>是否生成样本</th></tr>
+    <tr><td>完全匹配，状态很好</td><td>已完成今日校验 · 你今天和新的自己站在同一边。这次匹配已经记下来了。</td><td>不生成</td></tr>
+    <tr><td>部分偏离，动作没有完全走稳</td><td>已记录这次偏离 · 这不是失败，只是一条数据。看见它，就有机会调整方法。</td><td>生成「部分偏离」样本</td></tr>
+    <tr><td>完全偏离，只记作偏差数据</td><td>已记录这次偏离 · 这次偏离已经记下来了。它不是评判，而是下一次调整方法的依据。</td><td>生成「完全偏离」样本</td></tr>
+  </table>
+  <div class="callout">提交后约 1.6 秒会自动回到首页。同一天重复校验会覆盖当天记录，而不是新增一条——所以选错了随时可以「重新校准今天状态」。</div>
+</section>
+
+<section id="p-feedback">
+  <h3>9. 行动反馈</h3>
+  <p>路由 <code>/feedback</code>。副标题：<i>回看一次行动，比较期望与实际，再决定下一次怎样尝试。可以先记录一部分。</i>这一页对应原文建议的记录模板：尝试了什么 → 发生了什么 → 得到什么认识 → 下一次调整什么。</p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s26_feedback_form.png" alt="行动反馈表单"><figcaption>四个字段，可以先只写一部分</figcaption></figure>
+    <figure class="shot"><img src="images/s27_feedback_saved.png" alt="保存成功"><figcaption>保存后：给出下一步的三个去处</figcaption></figure>
+  </div>
+  <h4>四个字段</h4>
+  <table>
+    <tr><th>字段</th><th>提示原文</th></tr>
+    <tr><td>1. 尝试了什么</td><td>这次想推进什么？做了哪一步？原本希望发生什么？</td></tr>
+    <tr><td>2. 发生了什么</td><td>实际发生了什么？相对于原先期望，有什么差距或意外？</td></tr>
+    <tr><td>3. 得到什么认识</td><td>哪些解释得到支持，哪些需要重看？行动方式和现实条件有什么影响？</td></tr>
+    <tr><td>4. 下一次调整什么</td><td>下次准备保留或改变什么？可以调整行动、环境、项目，也可以重新考虑方向。</td></tr>
+  </table>
+  <ul>
+    <li>顶部可折叠的<b>「这次记录参考的方向」</b>会带入当前身份与最小启动行动；没有方向时提示「开始记录时没有可用方向。仍可保存自己的尝试与观察。」</li>
+    <li>四个字段全部为空时不能保存；只写了一部分也可以保存。</li>
+    <li>保存成功后会显示「这次反馈已经记下来了 · 它不是评分，而是下一次调整方法的依据。」并在下方列出<b>下一次调整：…</b>，同时给出三个去处：<b>回到首页／修改最小行动</b>、<b>查看／修改方向</b>、<b>修改最小启动行动</b>。</li>
+    <li>页面底部是「留下的反馈记录」列表，每条都保留了「记录时参考的方向」。</li>
+  </ul>
+</section>
+
+<section id="p-sos">
+  <h3>10. SOS 急救</h3>
+  <p>路由 <code>/sos</code>。首页右下角悬浮按钮随时可以进入。深色界面，标题是「先停一下，看看刚才发生了什么。」，正文为：<i>原因可能来自内部状态，也可能来自现实条件。深呼吸，先记下刚才发生了什么？</i></p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s28_sos.png" alt="SOS 三个选项"><figcaption>急救页：三个最接近的选项</figcaption></figure>
+    <figure class="shot"><img src="images/s29_sos_done.png" alt="SOS 完成态"><figcaption>完成态：记下来了 + 3 件小事 + 回到这一个动作</figcaption></figure>
+  </div>
+  <h4>使用方式</h4>
+  <ul>
+    <li>在三个选项里选最接近的一个：<b>我感到焦虑，想逃避</b>、<b>对庞大的目标感到畏惧</b>、<b>我开始怀疑自己根本做不到</b>。</li>
+    <li>提交后进入完成态：显示「这次状态已经记下来了」与「刚才发生的是：你选中的选项」，并给出「现在只做 3 件小事」——先把呼吸放慢，给自己 3 次缓慢吸气和呼气 / 先不给它下结论，也不必把它解释成「我不行」 / 回到首页，只做今天那个最小动作就够了。</li>
+    <li>同时显示「现在只回到这一个动作」卡（来自你的最小启动行动），可用<b>回到首页，看最小行动</b>或<b>先回首页，稍后再继续</b>返回。</li>
+    <li>如果你认为方向本身错了，页面底部提供<b>认为方向错了？重新进入 24h 重构</b>入口。</li>
+  </ul>
+  <div class="callout">每次 SOS 都会在样本库沉淀一条「SOS 急救」样本。它不是失败记录，而是最强烈拉扯被接住的证据。</div>
+</section>
+
+<section id="p-insights">
+  <h3>11. 惯性样本库</h3>
+  <p>路由 <code>/insights</code>。只展示<b>最近 7 天</b>的样本数据（页脚有说明）。页面顶部是横向筛选标签。</p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s30_insights_all.png" alt="全部样本"><figcaption>全部样本：筛选标签 + 本周复盘</figcaption></figure>
+    <figure class="shot"><img src="images/s31_insights_cards.png" alt="统计卡"><figcaption>正向回流信号、高频偏离模式与来源分布</figcaption></figure>
+    <figure class="shot"><img src="images/s32_insights_list.png" alt="样本列表"><figcaption>样本列表：来源标签 + 内容 + 时间</figcaption></figure>
+  </div>
+  <h4>五个筛选视角</h4>
+  <table>
+    <tr><th>筛选</th><th>看什么</th></tr>
+    <tr><td>全部</td><td>同时看到偏离、SOS、重构锚点和真空专注，先看全貌</td></tr>
+    <tr><td>每日偏离</td><td>聚焦日常拉扯，识别最常发生的偏离场景，再决定把动作缩到哪里</td></tr>
+    <tr><td>SOS</td><td>状态波动最明显时，你依然留下来的记录</td></tr>
+    <tr><td>首次重构</td><td>身份重构留下的锚点，是你重新站回来的依据</td></tr>
+    <tr><td>真空专注</td><td>你主动把自己带回来的证据</td></tr>
+  </table>
+  <p>切换筛选时，页面顶部会显示对应的「当前筛选」说明卡，例如全部视图下写着：<i>偏差=迭代数据，偏差≠失败。这里记录了最近 7 天的状态样本。</i></p>
+  <h4>页面上的统计卡</h4>
+  <ul>
+    <li><b>本周复盘</b>：匹配 / 部分偏离 / 完全偏离 / SOS / 真空专注 的次数。</li>
+    <li><b>正向回流信号</b>：最近 7 天完全匹配与真空专注的次数。</li>
+    <li><b>高频偏离模式</b>：把最常出现的拉扯聚合出来；样本不足时提示「继续记录就好，样本足够时这些模式会更清楚。」</li>
+    <li><b>样本来源分布</b>：每日偏离 / SOS / 首次重构 / 真空专注各占多少。</li>
+  </ul>
+  <p>页面底部还有一张跟进建议卡（眉批如「回到首页前」「看完全貌之后」），按钮会把你带回当下最该做的事（回首页继续 / 去做校验 / 先去专注 / 回到重构等）。如果是从首页某个入口点进来的，顶部还会多一张入口来源卡，说明「为什么你会看到这一页」。</p>
+</section>
+
+<section id="p-hub">
+  <h3>12. 重构归档</h3>
+  <p>路由 <code>/restructure</code>。标题「重构归档」，副标题：<i>把每一次身份重构留下来。这里先收纳当前锚点、历史版本和年度归档。</i></p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s33_hub_top.png" alt="归档页顶部"><figcaption>顶部：方法说明与六个操作入口</figcaption></figure>
+    <figure class="shot"><img src="images/s34_hub_mid.png" alt="归档页中部"><figcaption>中部：当前身份锚点与本次方向</figcaption></figure>
+    <figure class="shot"><img src="images/s35_hub_yearly.png" alt="年度归档"><figcaption>年度变化报告与年度归档</figcaption></figure>
+    <figure class="shot"><img src="images/s36_restart_sheet.png" alt="重启弹层"><figcaption>重新做一次身份重构：四个选项</figcaption></figure>
+    <figure class="shot"><img src="images/s37_morning_history.png" alt="晨间原稿归档"><figcaption>晨间原稿归档：每次归档独立保留</figcaption></figure>
+  </div>
+  <h4>顶部六个操作入口</h4>
+  <p><b>开始／继续晨间探索</b>、<b>记录日间观察</b>、<b>继续晚间综合</b>、<b>晨间原稿归档</b>、<b>回看探索材料</b>、<b>关于这套方法</b>。</p>
+  <h4>主要区块</h4>
+  <ul>
+    <li><b>当前身份锚点</b>：显示当前身份表达与最小启动行动；尚未写入时提示「尚未保存身份表达」「尚未选择最小启动行动」，右侧有刷新按钮。</li>
+    <li><b>本次方向已保存</b>：把最近一次晚间综合的六组件摊开——反愿景、深层恐惧、内在敌人（内部模式）、新身份、愿景 MVP、一年镜头、一月项目、每日杠杆、最小启动行动、价值约束、环境避坑规则。</li>
+    <li><b>身份库（今日聚焦）</b>：最多显示 5 条身份锚点，点击任意一条即可设为当前聚焦身份，首页身份文案会同步更新。</li>
+    <li><b>行动修改历史</b>：记录你每次修改最小启动行动的前后与原因。</li>
+    <li><b>历史重构记录</b>：每次新的重构都会沉淀在这里；本次是首次重构时显示「还没有更多历史版本」。</li>
+    <li><b>年度变化报告 / 年度归档</b>：按年份沉淀年度身份快照、信念快照、样本总量与校验稳定度；还没有数据时提示「年度归档还没有展开」。</li>
+  </ul>
+  <h4>重新做一次身份重构</h4>
+  <p>点<b>重新做一次身份重构</b>会弹出底部选择，共四个选项：</p>
+  <table>
+    <tr><th>选项</th><th>说明</th></tr>
+    <tr><td>归档原稿，开始新探索</td><td>保留旧晨稿和标记；清除未提交的晚间草稿，开始一份空白原稿。会先确认「开始一份新探索？」</td></tr>
+    <tr><td>继续当前探索原稿</td><td>保留晨间原稿，继续补充；晚间可以回看所选日期的观察。</td></tr>
+    <tr><td>彻底清空重建</td><td>会清空所有已有数据：身份、重构回答、晨间原稿、每日校验、SOS 记录等，且无法恢复。会二次确认「确定彻底清空重建？」</td></tr>
+    <tr><td>修改上一次的回答</td><td>保留现有数据，只更新你这一次写下的回答（进入 <code>/restructure/setup?mode=edit</code>）。</td></tr>
+  </table>
+  <h4>晨间原稿归档</h4>
+  <p>弹层说明：<i>每次归档独立保留原文和标记；可以回看相关日期的观察，也可以恢复后继续写。</i>每条归档显示「原稿 #编号 · 归档时间」「N 个回答 · N 个待回看问题」，并提供<b>查看原稿与观察</b>与<b>恢复为当前稿</b>；恢复前会确认「恢复这份原稿？」，恢复成功后提示「原稿已恢复，可继续晨间探索。」</p>
+</section>
+
+<section id="p-settings">
+  <h3>13. 设置</h3>
+  <p>路由 <code>/settings</code>。副标题：<i>先保留当前阶段需要的系统入口，方便查看本地状态、真空节奏和数据备份。</i></p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s38_settings_top.png" alt="设置顶部"><figcaption>顶部：流程状态、真空模式与专注状态</figcaption></figure>
+    <figure class="shot"><img src="images/s39_settings_resident.png" alt="后台常驻"><figcaption>后台常驻与提醒：逐项放行</figcaption></figure>
+    <figure class="shot"><img src="images/s40_settings_debug.png" alt="调试面板"><figcaption>本地数据库调试面板</figcaption></figure>
+    <figure class="shot"><img src="images/s41_settings_backup.png" alt="数据备份"><figcaption>数据导出与备份</figcaption></figure>
+  </div>
+  <h4>页面结构</h4>
+  <ul>
+    <li><b>当前流程状态</b>：显示档案状态（未初始化 / 已初始化 / 已完成重构）。</li>
+    <li><b>真空模式</b>：一行进入认知真空准备区，一行显示当前节奏（如 90 分钟 / 21:30 / 每晚一次温和提醒）。</li>
+    <li><b>真空专注</b>：显示当前是否正在专注与上一段结束时间，点「打开专注页」进入 <code>/vacuum/focus</code>。</li>
+    <li><b>后台常驻与提醒</b>：逐项放行，并显示已排提醒条数。</li>
+    <li><b>本地数据库调试面板</b>：数据库路径、最近 7 天样本、样本总数、每日校验总数、草稿状态、最近校验日期。</li>
+    <li><b>数据导出与备份</b>：导出 / 恢复本地 JSON 备份，并显示最近导出或恢复的文件、内容与时间。</li>
+    <li><b>重置为首次引导</b>：把应用恢复到第一次打开的引导状态。</li>
+  </ul>
+  <h4>后台常驻与提醒的五个状态行</h4>
+  <table>
+    <tr><th>项目</th><th>状态取值</th><th>按钮</th></tr>
+    <tr><td>通知权限</td><td>已开启 / 未开启</td><td>去允许</td></tr>
+    <tr><td>精确提醒</td><td>已允许 / 未允许（时间可能被延后）</td><td>去允许</td></tr>
+    <tr><td>电池优化</td><td>已豁免 / 仍受限制</td><td>去设置</td></tr>
+    <tr><td>常驻服务</td><td>运行中 / 未运行</td><td>立即开启</td></tr>
+    <tr><td>已排提醒</td><td>N 条</td><td>—</td></tr>
+  </table>
+  <div class="callout warn">如果日间打断或温和提醒「偶尔没响」，请到<b>后台常驻与提醒</b>逐项检查：通知权限「已开启」、精确提醒「已允许」、电池优化「已豁免」、常驻服务「运行中」。四项都放行后，即使应用被划掉，提醒也能准时到达。从系统设置返回时，这一页会自动刷新状态。</div>
+</section>
+
+<section id="p-after">
+  <h3>14. 走完一圈之后</h3>
+  <p>把上面的流程走完一遍，首页就会变成一个真正在用的仪表盘：身份与最小启动行动常驻在顶部，今天的校验已经记下，反愿景、日间观察、行动反馈、最近样本、本周摘要与真空节奏都在同一页里。</p>
+  <div class="shots">
+    <figure class="shot"><img src="images/s42_home_after_all.png" alt="走完一圈之后的首页"><figcaption>走完一圈之后的首页：身份、今日状态与回流信号都已就位</figcaption></figure>
+  </div>
+  <p>之后每天只需要重复最轻的两步：<b>白天被打断时记录一次观察</b>，<b>晚上做一次今日校验或行动反馈</b>。样本积累到一定数量后，惯性样本库里的高频偏离模式会开始显出形状；当身份或方向需要调整时，再从重构归档重新进入晚间综合。</p>
+</section>
+
+<section id="data">
+  <h2>四、数据、备份与隐私</h2>
+  <p class="lead">全部数据保存在手机本地的 SQLite 数据库里，不上传云端。</p>
+  <p>数据库文件为 <code>resetself_v1.db</code>，在应用私有目录 <code>/data/user/0/com.gx1727.resetself/databases/</code> 下，路径可以在设置页的调试面板中直接看到。</p>
+  <h3>核心数据表</h3>
+  <table>
+    <tr><th>表</th><th>存放内容</th></tr>
+    <tr><td>user_profile</td><td>当前身份、最小启动行动、流程状态、当前聚焦的身份锚点</td></tr>
+    <tr><td>restructure_morning_answer</td><td>晨间 14 问的原始回答（探索原稿）</td></tr>
+    <tr><td>morning_archive</td><td>归档的晨间原稿与「待回看」标记</td></tr>
+    <tr><td>restructure_draft</td><td>晚间向导未提交的草稿（含修改原因）</td></tr>
+    <tr><td>restructure_record</td><td>每次晚间综合的 11 项回答与调整原因，最新一次标记为 is_latest</td></tr>
+    <tr><td>limiting_belief</td><td>内部模式／限制性信念及其触发场景</td></tr>
+    <tr><td>identity_anchor</td><td>身份库中的身份锚点</td></tr>
+    <tr><td>daily_checkin</td><td>每日校验记录（每天一条，同日覆盖）</td></tr>
+    <tr><td>inertia_sample</td><td>惯性样本：每日偏离、SOS、首次重构、真空专注、日间观察</td></tr>
+    <tr><td>action_feedback</td><td>行动反馈闭环记录（尝试 / 发生 / 认识 / 调整）与当时的方向快照</td></tr>
+    <tr><td>action_change</td><td>最小启动行动的修改历史（原动作、新动作、原因、时间）</td></tr>
+    <tr><td>exploration_state</td><td>当前探索的起始时间状态</td></tr>
+    <tr><td>yearly_archive</td><td>年度身份快照、信念快照、样本总量、校验稳定度</td></tr>
+    <tr><td>vacuum_mode_settings</td><td>真空模式偏好（专注时长、降噪、提醒、日间打断时点）</td></tr>
+    <tr><td>vacuum_focus_state</td><td>当前真空专注状态（是否进行中、起始时间）</td></tr>
+  </table>
+  <h3>备份与恢复</h3>
+  <ul>
+    <li><b>导出本地备份</b>：把关键本地表导出成 JSON，保存在应用文档目录的 <code>backups</code> 文件夹中，例如 <code>resetself_backup_YYYYMMDD_HHMMSS.json</code>。导出成功会提示「本地备份已导出到：…」。</li>
+    <li><b>从最近备份恢复</b>：读取该目录中最近的一个备份文件并覆盖回数据库，恢复后首页与设置会自动刷新，成功提示「已从最近备份恢复：…」。</li>
+  </ul>
+  <div class="callout">建议在每次做完一次新的身份重构后导出一次备份；「彻底清空重建」与「重置为首次引导」都不可撤销。</div>
+</section>
+
+<section id="faq">
+  <h2>五、常见问题</h2>
+  <h4>Q1 我中途退出了向导，写的内容还在吗？</h4>
+  <p>在。晨间探索与晚间向导都会自动保存草稿，页面底部会显示「正在保存草稿…」「当前内容已保存」等状态；再次进入会接着上次的位置继续。右上角的<b>稍后继续</b>也是退出而不丢失。</p>
+  <h4>Q2 晨间写不完怎么办？</h4>
+  <p>可以先跳过答不出的题，也可以把某题标成<b>待回看</b>，之后再补。晨间原稿和「待回看」标记都会保存下来，晚间可以随时「回看晨间原稿」。回答属于探索原稿，性质和晚间综合的结论是分开存放的。</p>
+  <h4>Q3 想改上一次的回答，会清空我的数据吗？</h4>
+  <p>不会。在重构归档页点<b>重新做一次身份重构</b>，选择<b>修改上一次的回答</b>，只会更新这一次写下的内容，历史校验、样本与晨间原稿都保留。</p>
+  <h4>Q4 今天的校验选错了怎么办？</h4>
+  <p>回到首页点<b>重新校准今天状态</b>重新选择即可，同一天只会保留最新一次记录。</p>
+  <h4>Q5 日间打断的提醒没有出现？</h4>
+  <p>先确认认知真空准备区里「日间打断」是开启状态，再到设置页「后台常驻与提醒」逐项放行通知权限、精确提醒、电池优化与常驻服务。系统限制后台运行时会延后或吞掉提醒；即使通知没响，你也可以随时手动进入日间打断页记录一次观察。</p>
+  <h4>Q6 「完全偏离」记录会不会让统计很难看？</h4>
+  <p>不会影响你使用。偏离在系统里等于「迭代数据」，它只会作为一条样本出现，并影响本周摘要的统计口径，不会扣分、不会锁定任何功能。</p>
+  <h4>Q7 晨间原稿归档会不会把当前内容弄丢？</h4>
+  <p>不会。归档是独立保留一份副本，当前稿和草稿都还在；归档后也可以随时「恢复为当前稿」，恢复前会有二次确认。</p>
+  <h4>Q8 换手机后数据还在吗？</h4>
+  <p>数据只在本机，需要先在设置页导出备份并保存好 JSON 文件，再在新设备上把备份放回应用文档目录的 <code>backups</code> 文件夹，使用「从最近备份恢复」还原。</p>
+  <h4>Q9 我想彻底从头开始？</h4>
+  <p>两个入口：设置页<b>重置为首次引导</b>；或重构归档页<b>彻底清空重建</b>（此项会二次确认）。两者都会清空本地数据。</p>
+</section>
+
+<section id="appendix">
+  <h2>六、附录</h2>
+  <h3>附录 A：页面与路由对照</h3>
+  <table>
+    <tr><th>页面</th><th>路由</th><th>进入方式</th></tr>
+    <tr><td>启动页</td><td>/bootstrap</td><td>应用启动</td></tr>
+    <tr><td>欢迎页</td><td>/welcome</td><td>未完成首次重构时的默认页</td></tr>
+    <tr><td>认知真空准备区</td><td>/vacuum</td><td>欢迎页 / 首页左上角 / 设置页 / 日间打断页</td></tr>
+    <tr><td>真空专注页</td><td>/vacuum/focus</td><td>准备区或首页真空节奏卡 / 设置页</td></tr>
+    <tr><td>晨间探索</td><td>/restructure/morning</td><td>欢迎页 / 准备区 / 重构归档页</td></tr>
+    <tr><td>晚间综合向导</td><td>/restructure/setup</td><td>晨间保存后的弹层 / 归档页（?mode=edit 用于修改上一次回答）</td></tr>
+    <tr><td>首页</td><td>/home</td><td>已完成首次重构后的默认页</td></tr>
+    <tr><td>每日校验</td><td>/checkin</td><td>首页主按钮</td></tr>
+    <tr><td>日间打断</td><td>/interrupt</td><td>首页日间打断卡 / 晨间保存后的弹层</td></tr>
+    <tr><td>行动反馈</td><td>/feedback</td><td>首页行动反馈卡</td></tr>
+    <tr><td>SOS 急救</td><td>/sos</td><td>首页右下角悬浮按钮</td></tr>
+    <tr><td>惯性样本库</td><td>/insights</td><td>首页右上角归档图标及各类统计卡</td></tr>
+    <tr><td>重构归档</td><td>/restructure</td><td>首页反愿景赌注卡</td></tr>
+    <tr><td>设置</td><td>/settings</td><td>首页右上角设置图标</td></tr>
+  </table>
+  <h3>附录 B：惯性样本的来源类型</h3>
+  <table>
+    <tr><th>来源</th><th>产生场景</th><th>样本标签</th></tr>
+    <tr><td>manual</td><td>完成一次晚间综合</td><td>首次重构</td></tr>
+    <tr><td>daily_checkin</td><td>每日校验选择偏离</td><td>部分偏离 / 完全偏离</td></tr>
+    <tr><td>sos</td><td>SOS 急救提交</td><td>SOS 急救</td></tr>
+    <tr><td>vacuum_focus</td><td>结束一段真空专注</td><td>真空专注</td></tr>
+    <tr><td>daytime_interrupt</td><td>记录一次日间观察</td><td>成长性行为 / 逃避性行为 / 其他／待核对</td></tr>
+  </table>
+  <h3>附录 C：产品适配与后续能力</h3>
+  <p>与原文相比，ResetSelf 明确标注了哪些是产品适配或扩展：<span class="tag">最小启动行动</span><span class="tag">周回顾</span><span class="tag">专注工具</span>，以及面向日程的<span class="tag">示例时点</span>。认知真空准备区里还列出了尚未接入的三项能力：系统级专注权限引导、重构时段建议与专注提醒、首页回流与专注状态同步。</p>
+  <h3>附录 D：本手册截图的生成方式</h3>
+  <p>使用当前仓库代码构建 debug 版本安装到 Android 模拟器 <code>Medium_Phone</code>（1080×2400，420dpi，包名 <code>com.gx1727.resetself</code>），由 <code>integration_test</code> 驱动完整流程：在测试内对根 <code>RepaintBoundary</code> 截图并写入设备应用私有目录，宿主机再通过 <code>adb exec-out run-as</code> 持续拉取，因此每一张截图都与真实交互一一对应。截图里的身份、信念与样本内容均为演示数据。</p>
+</section>
+
+</main>
+</div>
+
+<footer>
+  ResetSelf 使用手册 · 基于仓库当前代码与模拟器实机截图整理 · 手册中的身份、信念与样本内容均为演示数据。
+</footer>
+
+</body>
+</html>
