@@ -654,13 +654,17 @@
   <p>与原文相比，ResetSelf 明确标注了哪些是产品适配或扩展：<span class="tag">最小启动行动</span><span class="tag">周回顾</span><span class="tag">专注工具</span>，以及面向日程的<span class="tag">示例时点</span>。认知真空准备区里还列出了尚未接入的三项能力：系统级专注权限引导、重构时段建议与专注提醒、首页回流与专注状态同步。</p>
   <h3>附录 D：本手册截图的生成方式</h3>
   <p>使用当前仓库代码构建 debug 版本安装到 Android 模拟器 <code>Medium_Phone</code>（1080×2400，420dpi，包名 <code>com.gx1727.resetself</code>），由 <code>integration_test</code> 驱动完整流程：在测试内对根 <code>RepaintBoundary</code> 截图并写入设备应用私有目录，宿主机再通过 <code>adb exec-out run-as</code> 持续拉取，因此每一张截图都与真实交互一一对应。截图里的身份、信念与样本内容均为演示数据。</p>
+  <h3>附录 E：开源仓库与下载</h3>
+  <p>ResetSelf 是开源项目，源码、问题反馈与版本更新都在 GitHub 仓库：<a href="https://github.com/gx1727/resetself">github.com/gx1727/resetself</a>。</p>
+  <p>打包好的 Android 安装包在 Releases 页面发布。当前最新版本为 <a href="https://github.com/gx1727/resetself/releases/tag/v1.0.0">v1.0.0</a>，可在 <a href="https://github.com/gx1727/resetself/releases">Releases 列表</a>选择版本，或直接下载 <a href="https://github.com/gx1727/resetself/releases/download/v1.0.0/app-release.apk">app-release.apk</a>。安装方式：连接设备后执行 <code>adb install -r app-release.apk</code>，或在手机上允许「未知来源」后直接安装。</p>
 </section>
 
 </main>
 </div>
 
 <footer>
-  ResetSelf 使用手册 · 基于仓库当前代码与模拟器实机截图整理 · 手册中的身份、信念与样本内容均为演示数据。
+  ResetSelf 使用手册 · 基于仓库当前代码与模拟器实机截图整理 · 手册中的身份、信念与样本内容均为演示数据。<br>
+  开源仓库：<a href="https://github.com/gx1727/resetself">github.com/gx1727/resetself</a> · 安装包下载：<a href="https://github.com/gx1727/resetself/releases">Releases</a>
 </footer>
 
 </body>
