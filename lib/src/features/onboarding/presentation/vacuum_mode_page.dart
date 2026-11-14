@@ -21,11 +21,7 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
   bool _isSaving = false;
 
   static const _focusWindowOptions = [60, 90, 120];
-  static const _rhythmOptions = [
-    '每晚一次温和提醒',
-    '工作日提醒',
-    '只在重构日提醒',
-  ];
+  static const _rhythmOptions = ['每晚一次温和提醒', '工作日提醒', '只在重构日提醒'];
 
   Future<void> _saveSettings(VacuumModeSettings settings) async {
     setState(() {
@@ -33,7 +29,9 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
       _isSaving = true;
     });
 
-    await ref.read(userProfileRepositoryProvider).saveVacuumModeSettings(settings);
+    await ref
+        .read(userProfileRepositoryProvider)
+        .saveVacuumModeSettings(settings);
     await SystemResident.syncReminders(settings);
     ref.invalidate(vacuumModeSettingsProvider);
 
@@ -45,7 +43,8 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
       _isSaving = false;
     });
   }
-@override
+
+  @override
   Widget build(BuildContext context) {
     final copy = CopyStrategy.vacuumMode();
 
@@ -89,11 +88,12 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                     const SizedBox(height: 8),
                     Text(
                       '认知真空\n准备区',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: const Color(0xFFE5E5EA),
-                        fontWeight: FontWeight.w700,
-                        height: 1.2,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            color: const Color(0xFFE5E5EA),
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -112,49 +112,52 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                     Text(
                       '建议专注时段',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: const Color(0xFFE5E5EA),
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: const Color(0xFFE5E5EA),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 10,
                       runSpacing: 10,
                       children: _focusWindowOptions.map((minutes) {
-                        final isSelected = minutes == settings.focusWindowMinutes;
+                        final isSelected =
+                            minutes == settings.focusWindowMinutes;
                         return ChoiceChip(
-                          label: Text(CopyStrategy.vacuumDurationOption(minutes)),
+                          label: Text(
+                            CopyStrategy.vacuumDurationOption(minutes),
+                          ),
                           selected: isSelected,
                           onSelected: _isSaving
                               ? null
                               : (_) => _saveSettings(
-                                    settings.copyWith(
-                                      focusWindowMinutes: minutes,
-                                    ),
+                                  settings.copyWith(
+                                    focusWindowMinutes: minutes,
                                   ),
+                                ),
                           selectedColor: const Color(0xFFE8F0EC),
                           backgroundColor: const Color(0xFF2C2C2E),
                           side: const BorderSide(color: Color(0xFF3A3A3C)),
-                          labelStyle:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: isSelected
-                                        ? const Color(0xFF819B8E)
-                                        : const Color(0xFFAFAFB4),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          labelStyle: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: isSelected
+                                    ? const Color(0xFF819B8E)
+                                    : const Color(0xFFAFAFB4),
+                                fontWeight: FontWeight.w600,
+                              ),
                         );
                       }).toList(),
                     ),
                     const SizedBox(height: 16),
                     _VacuumToggleCard(
                       title: '降噪状态',
-                      subtitle: '把社交信息和无关提醒先关在门外，给自己一段真正安静的时间。',
+                      subtitle: '这里只记录你的降噪偏好。应用不会自动屏蔽其他应用或系统通知，需要你自己把手机静音或收好。',
                       value: settings.noiseCutEnabled,
                       onChanged: _isSaving
                           ? null
                           : (value) => _saveSettings(
-                                settings.copyWith(noiseCutEnabled: value),
-                              ),
+                              settings.copyWith(noiseCutEnabled: value),
+                            ),
                     ),
                     const SizedBox(height: 12),
                     _VacuumToggleCard(
@@ -164,21 +167,35 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                       onChanged: _isSaving
                           ? null
                           : (value) => _saveSettings(
-                                settings.copyWith(
-                                  gentleReminderEnabled: value,
-                                ),
-                              ),
+                              settings.copyWith(gentleReminderEnabled: value),
+                            ),
                     ),
                     const SizedBox(height: 12),
                     _VacuumToggleCard(
                       title: '日间打断',
-                      subtitle: '在 11:00 / 13:30 / 15:15 / 17:00 / 19:30 / 21:00 提醒你停下来，用 3 分钟看清此刻是在走向新身份，还是退回旧惯性。',
+                      subtitle:
+                          '在 ${settings.interruptTimeList.join(' / ')} 提醒你停下来，用 3 分钟看清此刻的行为更靠近想成为的样子，还是更靠近旧有的模式。',
                       value: settings.interruptEnabled,
                       onChanged: _isSaving
                           ? null
                           : (value) => _saveSettings(
-                                settings.copyWith(interruptEnabled: value),
-                              ),
+                              settings.copyWith(interruptEnabled: value),
+                            ),
+                    ),
+                    const SizedBox(height: 12),
+                    _VacuumInterruptTimesCard(
+                      times: settings.interruptTimeList,
+                      enabled: !_isSaving && settings.interruptEnabled,
+                      onEdit: (index, value) {
+                        final times = [...settings.interruptTimeList];
+                        if (index < 0 || index >= times.length) {
+                          return;
+                        }
+                        times[index] = value;
+                        _saveSettings(
+                          settings.copyWith(interruptTimes: times.join(',')),
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     _VacuumChoiceCard(
@@ -188,8 +205,8 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                       onSelected: _isSaving
                           ? null
                           : (value) => _saveSettings(
-                                settings.copyWith(reminderTime: value),
-                              ),
+                              settings.copyWith(reminderTime: value),
+                            ),
                     ),
                     const SizedBox(height: 12),
                     _VacuumChoiceCard(
@@ -199,34 +216,30 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                       onSelected: _isSaving
                           ? null
                           : (value) => _saveSettings(
-                                settings.copyWith(focusRhythmLabel: value),
-                              ),
+                              settings.copyWith(focusRhythmLabel: value),
+                            ),
                     ),
                     const SizedBox(height: 16),
                     const _VacuumChecklistCard(
-                      title: '建议先完成的 3 件事',
+                      title: '可选准备（不是开始条件）',
                       items: [
-                        '把社交软件、短视频和工作通知先静音 90 分钟',
-                        '确认自己处在一个不会被打断的独处环境',
+                        '把社交软件、短视频和工作通知静音，时长按自己的情况决定',
+                        '尽量找一个少被打断的地方，找不到也可以直接开始',
                         '准备纸笔或耳机，只留下真正需要的工具',
                       ],
                     ),
                     const SizedBox(height: 16),
                     const _VacuumChecklistCard(
                       title: '后续会接进来的能力',
-                      items: [
-                        '系统级专注权限引导',
-                        '重构时段建议与专注提醒',
-                        '首页回流与专注状态同步',
-                      ],
+                      items: ['系统级专注权限引导', '重构时段建议与专注提醒', '首页回流与专注状态同步'],
                     ),
                     if (_isSaving) ...[
                       const SizedBox(height: 12),
                       Text(
                         '正在记住这次真空模式偏好...',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF8E8E93),
-                            ),
+                          color: const Color(0xFF8E8E93),
+                        ),
                       ),
                     ],
                     const SizedBox(height: 20),
@@ -243,7 +256,8 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                     ),
                     const SizedBox(height: 12),
                     FilledButton(
-                      onPressed: () => context.push(AppRoutes.restructureSetup),
+                      onPressed: () =>
+                          context.push(AppRoutes.restructureMorning),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -297,17 +311,17 @@ class _VacuumToggleCard extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: const Color(0xFFE5E5EA),
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: const Color(0xFFE5E5EA),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   subtitle,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFFAFAFB4),
-                        height: 1.6,
-                      ),
+                    color: const Color(0xFFAFAFB4),
+                    height: 1.6,
+                  ),
                 ),
               ],
             ),
@@ -353,9 +367,9 @@ class _VacuumChoiceCard extends StatelessWidget {
           Text(
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFFE5E5EA),
-                  fontWeight: FontWeight.w700,
-                ),
+              color: const Color(0xFFE5E5EA),
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -366,16 +380,18 @@ class _VacuumChoiceCard extends StatelessWidget {
               return ChoiceChip(
                 label: Text(option),
                 selected: isSelected,
-                onSelected: onSelected == null ? null : (_) => onSelected!(option),
+                onSelected: onSelected == null
+                    ? null
+                    : (_) => onSelected!(option),
                 selectedColor: const Color(0xFFE8F0EC),
                 backgroundColor: const Color(0xFF1F1F21),
                 side: const BorderSide(color: Color(0xFF3A3A3C)),
                 labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isSelected
-                          ? const Color(0xFF819B8E)
-                          : const Color(0xFFAFAFB4),
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: isSelected
+                      ? const Color(0xFF819B8E)
+                      : const Color(0xFFAFAFB4),
+                  fontWeight: FontWeight.w600,
+                ),
               );
             }).toList(),
           ),
@@ -385,11 +401,104 @@ class _VacuumChoiceCard extends StatelessWidget {
   }
 }
 
-class _VacuumChecklistCard extends StatelessWidget {
-  const _VacuumChecklistCard({
-    required this.title,
-    required this.items,
+class _VacuumInterruptTimesCard extends StatelessWidget {
+  const _VacuumInterruptTimesCard({
+    required this.times,
+    required this.enabled,
+    required this.onEdit,
   });
+
+  final List<String> times;
+  final bool enabled;
+  final void Function(int index, String value) onEdit;
+
+  Future<void> _pick(BuildContext context, int index) async {
+    final current = _parseTimeOfDay(times[index]);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: current ?? const TimeOfDay(hour: 11, minute: 0),
+    );
+    if (picked == null) {
+      return;
+    }
+    final value =
+        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+    onEdit(index, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2E),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF3A3A3C)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '日间打断时点',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: const Color(0xFFE5E5EA),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '这六个时点是产品示例，不是原文规定。你可以按自己的日程调整它们，提醒会按新时点重排。',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFFAFAFB4),
+              height: 1.6,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var i = 0; i < times.length; i++)
+                OutlinedButton(
+                  onPressed: enabled ? () => _pick(context, i) : null,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFAFAFB4),
+                    side: const BorderSide(color: Color(0xFF3A3A3C)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    minimumSize: const Size(0, 36),
+                  ),
+                  child: Text(times[i]),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+TimeOfDay? _parseTimeOfDay(String value) {
+  final parts = value.split(':');
+  if (parts.length != 2) {
+    return null;
+  }
+  final hour = int.tryParse(parts[0].trim());
+  final minute = int.tryParse(parts[1].trim());
+  if (hour == null || minute == null) {
+    return null;
+  }
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null;
+  }
+  return TimeOfDay(hour: hour, minute: minute);
+}
+
+class _VacuumChecklistCard extends StatelessWidget {
+  const _VacuumChecklistCard({required this.title, required this.items});
 
   final String title;
   final List<String> items;

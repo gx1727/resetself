@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
   static const dbName = 'resetself_v1.db';
-  static const dbVersion = 7;
+  static const dbVersion = 11;
 
   Database? _database;
   Future<Database>? _databaseFuture;
@@ -93,10 +93,12 @@ class AppDatabase {
         belief_draft TEXT,
         identity_draft TEXT,
         min_action_draft TEXT,
+        daily_levers TEXT,
         vision_text TEXT,
         year_goal TEXT,
         month_project TEXT,
         constraints TEXT,
+        value_constraints TEXT,
         is_latest INTEGER DEFAULT 0,
         create_year INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -167,6 +169,8 @@ class AppDatabase {
     await _createVacuumSettingsTable(db);
     await _createVacuumFocusStateTable(db);
     await _createIdentityAnchorTable(db);
+    await _createMorningAnswerTable(db);
+    await _createActionFeedbackTable(db);
   }
 
   Future<void> _migrateSchema(
@@ -201,6 +205,102 @@ class AppDatabase {
       // v6 的全新安装走 onCreate，建表时漏了 current_anchor_id，这里统一补齐。
       await _addCurrentAnchorIdToUserProfile(db);
     }
+
+    if (oldVersion < 8 && newVersion >= 8) {
+      // v8：区分"价值约束"与既有的"环境避坑规则"。
+      // 旧 constraints 的避坑语义保持不变，只新增 value_constraints 承载价值约束。
+      await _addValueConstraintsColumns(db);
+    }
+
+    if (oldVersion < 9 && newVersion >= 9) {
+      // v9：晨间 14 问的探索原稿独立存储，与晚间综合结论分开。
+      await _createMorningAnswerTable(db);
+    }
+
+    if (oldVersion < 10 && newVersion >= 10) {
+      // v10：区分原文的「每日杠杆」（2–3 项行动）与产品的「最小启动行动」。
+      await _addDailyLeversColumns(db);
+    }
+
+    if (oldVersion < 11 && newVersion >= 11) {
+      // v11：落地原文的行动反馈闭环记录：
+      // 尝试了什么 → 发生了什么 → 得到什么认识 → 下一次调整什么。
+      await _createActionFeedbackTable(db);
+    }
+  }
+
+  /// v10：为重构草稿与重构记录补充「每日杠杆」字段。
+  ///
+  /// 原文建议为明天的 2–3 个行动安排时间块；既有的 `min_action_draft`
+  /// 继续承载产品适配的「最小启动行动」，两者不再混用。
+  Future<void> _addDailyLeversColumns(DatabaseExecutor db) async {
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_record',
+      column: 'daily_levers',
+      definition: 'TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_draft',
+      column: 'daily_levers',
+      definition: "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
+  /// v9：晨间"心理挖掘"阶段的探索原稿。
+  ///
+  /// 与 [restructure_draft]、[restructure_record] 的区别：
+  /// 前者保存的是晚间综合后的结论与六组件；
+  /// 这里保存的是晨间 14 问的原始回答，用于区分"探索原稿"与"综合结论"。
+  Future<void> _createMorningAnswerTable(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS restructure_morning_answer (
+        question_key TEXT PRIMARY KEY,
+        answer TEXT NOT NULL DEFAULT '',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+  }
+
+  /// v11：行动反馈闭环记录。
+  ///
+  /// 对齐规范 §8.1 建议的产品记录模板：
+  /// 「尝试了什么 → 发生了什么 → 得到什么认识 → 下一次调整什么」。
+  /// 只记录主观文本与时间，不派生分数或排名。
+  Future<void> _createActionFeedbackTable(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS action_feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        attempted TEXT NOT NULL DEFAULT '',
+        happened TEXT NOT NULL DEFAULT '',
+        insight TEXT NOT NULL DEFAULT '',
+        adjustment TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_action_feedback_time ON action_feedback(created_at);',
+    );
+  }
+
+  /// v8：为重构草稿与重构记录补充「价值约束」字段。
+  ///
+  /// 建议沿用原文六组件里 Constraints 的含义：为了愿景不愿牺牲的边界。
+  /// 既有的 `constraints` 字段继续承载「环境避坑规则」，不改写历史答案的意思。
+  Future<void> _addValueConstraintsColumns(DatabaseExecutor db) async {
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_record',
+      column: 'value_constraints',
+      definition: 'TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_draft',
+      column: 'value_constraints',
+      definition: "TEXT NOT NULL DEFAULT ''",
+    );
   }
 
   /// v6：把单日重构从 5 步升级为完整协议后，补齐游戏化 6 组件字段。
@@ -256,9 +356,7 @@ class AppDatabase {
   }
 
   /// v6：落地"日间打断"能力后，真空设置里补充打断开关与打断时点。
-  Future<void> _addInterruptColumnsToVacuumSettings(
-    DatabaseExecutor db,
-  ) async {
+  Future<void> _addInterruptColumnsToVacuumSettings(DatabaseExecutor db) async {
     await _addColumnIfMissing(
       db,
       table: 'vacuum_mode_settings',
@@ -295,10 +393,12 @@ class AppDatabase {
         belief_draft TEXT NOT NULL DEFAULT '',
         identity_draft TEXT NOT NULL DEFAULT '',
         min_action_draft TEXT NOT NULL DEFAULT '',
+        daily_levers TEXT NOT NULL DEFAULT '',
         vision_text TEXT NOT NULL DEFAULT '',
         year_goal TEXT NOT NULL DEFAULT '',
         month_project TEXT NOT NULL DEFAULT '',
         constraints TEXT NOT NULL DEFAULT '',
+        value_constraints TEXT NOT NULL DEFAULT '',
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     ''');
@@ -379,8 +479,7 @@ class AppDatabase {
     }
 
     final profile = profiles.first;
-    final identityText =
-        (profile['identity_text'] as String?)?.trim() ?? '';
+    final identityText = (profile['identity_text'] as String?)?.trim() ?? '';
     if (identityText.isEmpty) {
       return;
     }
@@ -402,10 +501,7 @@ class AppDatabase {
     );
 
     if (inserted != null) {
-      await db.update(
-        'user_profile',
-        {'current_anchor_id': inserted},
-      );
+      await db.update('user_profile', {'current_anchor_id': inserted});
     }
   }
 }

@@ -11,6 +11,8 @@ data class ReminderSpec(
     val minute: Int,
     val title: String,
     val body: String,
+    /** 日间打断对应的自省问题 id，用于通知点击后直达该问题；非日间提醒为空串。 */
+    val promptId: String = "",
 )
 
 /** 提醒持久化，开机后据此重排闹钟。 */
@@ -28,6 +30,7 @@ object ReminderStore {
                     put("minute", spec.minute)
                     put("title", spec.title)
                     put("body", spec.body)
+                    put("promptId", spec.promptId)
                 },
             )
         }
@@ -46,6 +49,7 @@ object ReminderStore {
                     minute = item.optInt("minute", 0),
                     title = item.optString("title", "ResetSelf"),
                     body = item.optString("body", ""),
+                    promptId = item.optString("promptId", ""),
                 )
             }.filter { it.id > 0 }
         } catch (ignored: Exception) {

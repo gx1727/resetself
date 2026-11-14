@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -36,7 +37,8 @@ class SystemResidentStatus {
       exactAlarmAllowed: readBool('exactAlarmAllowed'),
       ignoringBatteryOptimizations: readBool('ignoringBatteryOptimizations'),
       residentRunning: readBool('residentRunning'),
-      scheduledReminderCount: (map['scheduledReminderCount'] as num?)?.toInt() ?? 0,
+      scheduledReminderCount:
+          (map['scheduledReminderCount'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -48,14 +50,48 @@ class SystemResidentStatus {
 class SystemResident {
   const SystemResident._();
 
-  static const MethodChannel _channel =
-      MethodChannel('com.gx1727.resetself/resident');
+  static const MethodChannel _channel = MethodChannel(
+    'com.gx1727.resetself/resident',
+  );
 
   /// 日间打断的提醒 id 从 2000 起，真空温和提醒固定 2900，避开前台服务的 1001。
   static const int _interruptReminderIdBase = 2000;
   static const int _vacuumReminderId = 2900;
 
   static bool get isSupported => Platform.isAndroid;
+
+  /// 通知点击"问题直达"时，原生侧通过这个流把目标问题 id 传给 Dart。
+  static final StreamController<String> _daytimePromptController =
+      StreamController<String>.broadcast();
+
+  static Stream<String> get daytimePromptRequests =>
+      _daytimePromptController.stream;
+
+  static bool _promptHandlerBound = false;
+
+  /// 绑定原生 → Dart 的通知点击回调，并告知原生侧可以开始投递。
+  ///
+  /// 冷启动时通知点发生得早于 Dart 初始化，因此用 ready 握手让原生侧先在
+  /// 本地暂存，等这里准备好后再补发，避免丢失"问题直达"。
+  static void bindDaytimePromptRequests() {
+    if (!isSupported || _promptHandlerBound) {
+      return;
+    }
+    _promptHandlerBound = true;
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'openDaytimePrompt') {
+        final arguments = call.arguments;
+        final promptId = arguments is Map
+            ? arguments['promptId'] as String?
+            : null;
+        if (promptId != null && promptId.isNotEmpty) {
+          _daytimePromptController.add(promptId);
+        }
+      }
+      return null;
+    });
+    _invoke('promptBridgeReady');
+  }
 
   /// 拉起前台常驻服务，让进程在后台不被系统回收。失败时静默忽略。
   static Future<void> start() async {
@@ -86,7 +122,10 @@ class SystemResident {
       return;
     }
     try {
-      await _channel.invokeMethod<bool>('syncReminders', buildReminders(settings));
+      await _channel.invokeMethod<bool>(
+        'syncReminders',
+        buildReminders(settings),
+      );
     } catch (_) {
       // 忽略。
     }
@@ -97,7 +136,9 @@ class SystemResident {
       return SystemResidentStatus.unsupported;
     }
     try {
-      final result = await _channel.invokeMethod<Map<Object?, Object?>>('status');
+      final result = await _channel.invokeMethod<Map<Object?, Object?>>(
+        'status',
+      );
       if (result == null) {
         return SystemResidentStatus.unsupported;
       }
@@ -131,12 +172,12 @@ class SystemResident {
   }
 
   /// 把真空模式设置翻译成原生侧的每日提醒清单。
-  static List<Map<String, Object?>> buildReminders(VacuumModeSettings settings) {
+  static List<Map<String, Object?>> buildReminders(
+    VacuumModeSettings settings,
+  ) {
     final reminders = <Map<String, Object?>>[];
     final interruptCopy = CopyStrategy.daytimeInterrupt();
-    final questions = {
-      for (final prompt in interruptCopy.prompts) prompt.time: prompt.question,
-    };
+    final prompts = interruptCopy.prompts;
 
     if (settings.interruptEnabled) {
       final times = settings.interruptTimeList;
@@ -146,13 +187,14 @@ class SystemResident {
         if (parsed == null) {
           continue;
         }
+        final prompt = index < prompts.length ? prompts[index] : null;
         reminders.add({
           'id': _interruptReminderIdBase + index,
           'hour': parsed.$1,
           'minute': parsed.$2,
           'title': '日间打断 · $time',
-          'body': questions[time] ??
-              '用 3 分钟看清：此刻的行为，是在走向新身份，还是退回旧惯性。',
+          'body': prompt?.question ?? '用 3 分钟看清：此刻的行为，更靠近你想成为的样子，还是更靠近旧有的模式。',
+          'promptId': prompt?.id ?? '',
         });
       }
     }

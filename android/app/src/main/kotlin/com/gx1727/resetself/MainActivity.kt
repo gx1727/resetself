@@ -16,49 +16,90 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var channel: MethodChannel? = null
+    private var dartPromptBridgeReady = false
+    private var pendingPromptId: String? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL_NAME)
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "startResident" -> {
-                        ResidentService.start(this)
-                        result.success(true)
-                    }
-
-                    "stopResident" -> {
-                        ResidentService.stop(this)
-                        result.success(true)
-                    }
-
-                    "syncReminders" -> {
-                        val specs = parseReminders(call.arguments)
-                        NotificationHelper.ensureChannels(this)
-                        ReminderScheduler.sync(this, specs)
-                        result.success(true)
-                    }
-
-                    "status" -> result.success(currentStatus())
-
-                    "requestNotificationPermission" -> {
-                        requestNotificationPermission()
-                        result.success(true)
-                    }
-
-                    "requestExactAlarm" -> {
-                        openExactAlarmSettings()
-                        result.success(true)
-                    }
-
-                    "requestIgnoreBatteryOptimizations" -> {
-                        openBatteryOptimizationSettings()
-                        result.success(true)
-                    }
-
-                    else -> result.notImplemented()
+        val methodChannel =
+            MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL_NAME)
+        methodChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "startResident" -> {
+                    ResidentService.start(this)
+                    result.success(true)
                 }
+
+                "stopResident" -> {
+                    ResidentService.stop(this)
+                    result.success(true)
+                }
+
+                "syncReminders" -> {
+                    val specs = parseReminders(call.arguments)
+                    NotificationHelper.ensureChannels(this)
+                    ReminderScheduler.sync(this, specs)
+                    result.success(true)
+                }
+
+                "status" -> result.success(currentStatus())
+
+                "requestNotificationPermission" -> {
+                    requestNotificationPermission()
+                    result.success(true)
+                }
+
+                "requestExactAlarm" -> {
+                    openExactAlarmSettings()
+                    result.success(true)
+                }
+
+                "requestIgnoreBatteryOptimizations" -> {
+                    openBatteryOptimizationSettings()
+                    result.success(true)
+                }
+
+                // Dart 侧已挂好通知点击回调，可以开始投递暂存的问题直达。
+                "promptBridgeReady" -> {
+                    dartPromptBridgeReady = true
+                    flushPendingPrompt()
+                    result.success(true)
+                }
+
+                else -> result.notImplemented()
             }
+        }
+        channel = methodChannel
+        capturePromptIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        capturePromptIntent(intent)
+    }
+
+    /** 从通知点击的 Intent 里取出问题 id，并在 Dart 就绪后转发过去。 */
+    private fun capturePromptIntent(intent: Intent?) {
+        val promptId = intent?.getStringExtra(NotificationHelper.EXTRA_PROMPT_ID) ?: return
+        if (promptId.isEmpty()) {
+            return
+        }
+        intent.removeExtra(NotificationHelper.EXTRA_PROMPT_ID)
+        pendingPromptId = promptId
+        flushPendingPrompt()
+    }
+
+    private fun flushPendingPrompt() {
+        val promptId = pendingPromptId ?: return
+        if (!dartPromptBridgeReady) {
+            return
+        }
+        val currentChannel = channel ?: return
+        pendingPromptId = null
+        currentChannel.invokeMethod("openDaytimePrompt", mapOf("promptId" to promptId))
     }
 
     private fun parseReminders(arguments: Any?): List<ReminderSpec> {
@@ -74,6 +115,7 @@ class MainActivity : FlutterActivity() {
                 minute = minute,
                 title = item["title"] as? String ?: "ResetSelf",
                 body = item["body"] as? String ?: "",
+                promptId = item["promptId"] as? String ?: "",
             )
         }
     }

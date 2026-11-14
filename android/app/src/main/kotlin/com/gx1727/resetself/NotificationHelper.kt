@@ -19,6 +19,9 @@ object NotificationHelper {
     const val CHANNEL_REMINDER = "resetself_reminder"
     const val RESIDENT_NOTIFICATION_ID = 1001
 
+    /** 通知点击时携带的自省问题 id，用于打开应用后直达对应问题。 */
+    const val EXTRA_PROMPT_ID = "resetself_prompt_id"
+
     fun ensureChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return
@@ -55,7 +58,7 @@ object NotificationHelper {
             .setContentText("提醒会在后台准时到达")
             .setOngoing(true)
             .setShowWhen(false)
-            .setContentIntent(activityIntent(context, RESIDENT_NOTIFICATION_ID))
+            .setContentIntent(activityIntent(context, RESIDENT_NOTIFICATION_ID, ""))
             .build()
     }
 
@@ -68,7 +71,7 @@ object NotificationHelper {
             .setContentText(spec.body)
             .setStyle(Notification.BigTextStyle().bigText(spec.body))
             .setAutoCancel(true)
-            .setContentIntent(activityIntent(context, spec.id))
+            .setContentIntent(activityIntent(context, spec.id, spec.promptId))
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -84,9 +87,12 @@ object NotificationHelper {
         }
     }
 
-    private fun activityIntent(context: Context, requestCode: Int): PendingIntent {
+    private fun activityIntent(context: Context, requestCode: Int, promptId: String): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (promptId.isNotEmpty()) {
+                putExtra(EXTRA_PROMPT_ID, promptId)
+            }
         }
         var flags = PendingIntent.FLAG_UPDATE_CURRENT
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

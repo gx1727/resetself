@@ -13,7 +13,7 @@ class CopyStrategy {
     return const OnboardingCopy(
       airBadgeLabel: 'AIR',
       title: 'ResetSelf',
-      subtitle: '把每一次想坚持却没有坚持的瞬间，\n悄悄变成可追溯的旧惯性样本。',
+      subtitle: '把想坚持却没有坚持的瞬间，\n记下来，作为可以回看的样本。',
       vacuumPrepCta: '先看认知真空准备区',
       restructureCta: '开启 24h 重构向导',
       reopenFocus: '打开专注进行中',
@@ -24,7 +24,7 @@ class CopyStrategy {
     return const VacuumModeCopy(
       backLabel: '返回',
       title: '认知真空',
-      subtitle: '先关掉提醒、关掉打扰，\n给接下来 24 小时留一段真正安静区。',
+      subtitle: '接下来可以尽量减少打扰，\n给这一天的反思留一段相对安静的时间。',
       durationLabel: '专注时长',
       minutesUnit: '分钟',
       muteChannelsLabel: '降噪渠道',
@@ -41,7 +41,7 @@ class CopyStrategy {
   static HomeCopy home() {
     return const HomeCopy(
       identityBadge: '当前核心身份',
-      minActionLabel: '明日极简动作',
+      minActionLabel: '最小启动行动',
       todayStatusCheckinMissing: '今天还没有开始校准',
       todayStatusEmptyHint: '无需自责，系统只做状态校准',
       todayStatusRecordedHint: '今天的状态已经被温柔地记下了。',
@@ -60,8 +60,8 @@ class CopyStrategy {
       vacuumActiveOngoing: '正在进行',
       vacuumReminderOn: '{time} 提醒',
       vacuumReminderOff: '不启用提醒',
-      vacuumNoiseOn: '先隔离碎片输入',
-      vacuumNoiseOff: '手动保持安静区',
+      vacuumNoiseOn: '降噪偏好已记录',
+      vacuumNoiseOff: '未记录降噪偏好',
       vacuumFinishedReturnPrompt: '上一段专注已经结束。现在只回到这一个动作：{action}',
       sampleSourceSos: 'SOS急救',
       sampleSourceDailyDeviation: '每日偏离',
@@ -86,17 +86,15 @@ class CopyStrategy {
   }
 
   static String homeVacuumReminder(String time) {
-    return CopyLexicon.formatTemplate(
-      CopyStrategy.home().vacuumReminderOn,
-      {'time': time},
-    );
+    return CopyLexicon.formatTemplate(CopyStrategy.home().vacuumReminderOn, {
+      'time': time,
+    });
   }
 
   static String insightsInsightEntryTitle(String filterLabel) {
-    return CopyLexicon.formatTemplate(
-      '先借 {filter} 看清这一周的节奏',
-      {'filter': filterLabel},
-    );
+    return CopyLexicon.formatTemplate('先借 {filter} 看清这一周的节奏', {
+      'filter': filterLabel,
+    });
   }
 
   static InsightsCopy insights() {
@@ -190,23 +188,23 @@ class CopyStrategy {
     final second = value.second.toString().padLeft(2, '0');
     return CopyLexicon.formatTemplate(
       CopyStrategy.settings().debugTimestampTemplate,
-      {
-        'date': '$year-$month-$day',
-        'time': '$hour:$minute:$second',
-      },
+      {'date': '$year-$month-$day', 'time': '$hour:$minute:$second'},
     );
   }
 
   static ArchiveCopy archive() {
     return const ArchiveCopy(
       fieldIdentity: '新身份',
-      fieldBelief: '限制性信念',
+      fieldBelief: '内在敌人（内部模式）',
       fieldFear: '底层恐惧',
       fieldAntiVision: '反愿景',
       fieldVision: '愿景 MVP',
       fieldYearGoal: '一年镜头',
-      fieldMonthProject: '一月镜头',
-      fieldConstraints: '避坑机制',
+      fieldMonthProject: '一月项目',
+      fieldDailyLevers: '每日杠杆',
+      fieldMinAction: '最小启动行动',
+      fieldValueConstraints: '价值约束',
+      fieldConstraints: '环境避坑规则',
       fieldYearlyIdentity: '年度身份快照',
       gameSectionTitle: '人生游戏化闭环',
       anchorSectionTitle: '身份库（今日聚焦）',
@@ -227,37 +225,73 @@ class CopyStrategy {
   static DaytimeInterruptCopy daytimeInterrupt() {
     return const DaytimeInterruptCopy(
       title: '日间打断',
-      subtitle: '在固定的六个时点，用 3 分钟看清：\n此刻的行为，是在走向新身份，还是退回旧惯性。',
+      subtitle: '在白天，用几次短暂停顿看清：\n此刻的行为，更靠近你想成为的样子，还是更靠近旧有的模式？',
       recordedTemplate: '今天已完成 {count} 次自省',
       pendingLabel: '还没到下一个打断时点',
       promptEyebrow: '此刻的自省问题',
+      followUpEyebrow: '随时可用的追加追问',
       reflectionLabel: '写下你此刻的觉察',
       reflectionHint: '不用写多，两三句就够。',
-      tagLabel: '把这次行为先归类',
+      tagLabel: '把这次行为先粗略归类（留给初步整理，不覆盖全部情况）',
       growthTag: '成长性行为',
       escapeTag: '逃避性行为',
+      otherTag: '其他／待核对',
       saveLabel: '记录这次自省',
       savedTitle: '这次自省已经被记下来',
-      savedBody: '它不是评判，而是一条让你看清旧惯性出现时段的样本。',
+      savedBody: '它不是评判，而是一条帮你看清模式出现时段的记录。',
+      emptyContentHint: '先写下一点觉察，再记录这次自省。',
+      missingTagHint: '先选一个归类，或者选择“其他／待核对”。',
       disabledTitle: '日间打断还没有开启',
-      disabledBody: '可以在认知真空准备区打开"日间打断"，让这六个时点提醒你停下来。',
+      disabledBody: '可以在认知真空准备区打开"日间打断"，让这些时点提醒你停下来。',
       historyTitle: '今天留下的自省',
       historyEmpty: '今天还没有留下自省记录。',
       prompts: [
-        InterruptPrompt(time: '11:00', question: '我现在通过正在做的事，在逃避什么？'),
         InterruptPrompt(
+          id: '11:00',
+          time: '11:00',
+          question: '我现在通过正在做的事，在逃避什么？',
+        ),
+        InterruptPrompt(
+          id: '13:30',
           time: '13:30',
           question: '如果有人拍下过去两个小时，会得出我想从人生中得到什么？',
         ),
-        InterruptPrompt(time: '15:15', question: '我是在走向自己讨厌的人生，还是想要的人生？'),
-        InterruptPrompt(time: '17:00', question: '我正在假装不重要的、最重要的事情是什么？'),
         InterruptPrompt(
+          id: '15:15',
+          time: '15:15',
+          question: '我是在走向自己讨厌的人生，还是想要的人生？',
+        ),
+        InterruptPrompt(
+          id: '17:00',
+          time: '17:00',
+          question: '我正在假装不重要的、最重要的事情是什么？',
+        ),
+        InterruptPrompt(
+          id: '19:30',
           time: '19:30',
           question: '我今天有哪些事是出于身份保护，而不是真正渴望？',
         ),
         InterruptPrompt(
+          id: '21:00',
           time: '21:00',
           question: '今天什么时候我感觉最有生命力？什么时候最死气沉沉？',
+        ),
+      ],
+      followUpPrompts: [
+        InterruptPrompt(
+          id: 'followup_identity',
+          time: '通勤 · 散步',
+          question: '如果我不再需要别人把我看成那个旧身份，我的生活会发生什么改变？',
+        ),
+        InterruptPrompt(
+          id: 'followup_aliveness',
+          time: '慢下来时',
+          question: '我在生活的哪些地方，用生命力换取安全？',
+        ),
+        InterruptPrompt(
+          id: 'followup_smallest',
+          time: '睡前',
+          question: '我想成为的那个人，最小的版本是什么？明天我就能成为吗？',
         ),
       ],
     );
@@ -267,6 +301,28 @@ class CopyStrategy {
     return CopyLexicon.formatTemplate(
       CopyStrategy.daytimeInterrupt().recordedTemplate,
       {'count': '$count'},
+    );
+  }
+
+  static ActionFeedbackCopy actionFeedback() {
+    return const ActionFeedbackCopy(
+      title: '行动反馈闭环',
+      subtitle: '把一次行动完整走一遍：\n尝试 → 发生 → 认识 → 调整。',
+      attemptedLabel: '1. 尝试了什么',
+      attemptedHint: '这一次你实际做了什么动作、实验或安排？',
+      happenedLabel: '2. 发生了什么',
+      happenedHint: '执行之后，你实际观察到的结果是什么？',
+      insightLabel: '3. 得到什么认识',
+      insightHint: '从结果里，你读到了什么？',
+      adjustmentLabel: '4. 下一次调整什么',
+      adjustmentHint: '下一次你准备改变哪个行动、环境或方法？',
+      saveLabel: '保存这次反馈',
+      savedTitle: '这次反馈已经记下来了',
+      savedBody: '它不是评分，而是下一次调整方法的依据。',
+      emptyHint: '先写下一点内容，把这次尝试记下来。',
+      historyTitle: '留下的反馈记录',
+      historyEmpty: '还没有留下反馈记录。完成一次行动后，从这里记下它。',
+      emptyValue: '（没有填写）',
     );
   }
 }
@@ -280,7 +336,7 @@ class CopyLexicon {
   }
 
   static String deviationFrame({required bool intense}) {
-    return intense ? '这不是你的错，是旧惯性的防御。' : '这不是失败，只是一条珍贵的数据。';
+    return intense ? '这只是一次偏离记录，原因仍需要你自己核对。' : '这不是失败，只是一条数据。';
   }
 
   static String returnSignalPhrase({required bool strong}) {
@@ -481,8 +537,6 @@ class InsightsCopy {
   final String monthDayTimeTemplate;
 }
 
-
-
 class ArchiveCopy {
   const ArchiveCopy({
     required this.fieldIdentity,
@@ -492,6 +546,9 @@ class ArchiveCopy {
     required this.fieldVision,
     required this.fieldYearGoal,
     required this.fieldMonthProject,
+    required this.fieldDailyLevers,
+    required this.fieldMinAction,
+    required this.fieldValueConstraints,
     required this.fieldConstraints,
     required this.fieldYearlyIdentity,
     required this.gameSectionTitle,
@@ -505,6 +562,9 @@ class ArchiveCopy {
   final String fieldVision;
   final String fieldYearGoal;
   final String fieldMonthProject;
+  final String fieldDailyLevers;
+  final String fieldMinAction;
+  final String fieldValueConstraints;
   final String fieldConstraints;
   final String fieldYearlyIdentity;
   final String gameSectionTitle;
@@ -512,8 +572,14 @@ class ArchiveCopy {
 }
 
 class InterruptPrompt {
-  const InterruptPrompt({required this.time, required this.question});
+  const InterruptPrompt({
+    required this.id,
+    required this.time,
+    required this.question,
+  });
 
+  /// 稳定标识，用于区分同一时点与追加追问，避免记录去重时相互覆盖。
+  final String id;
   final String time;
   final String question;
 }
@@ -525,19 +591,24 @@ class DaytimeInterruptCopy {
     required this.recordedTemplate,
     required this.pendingLabel,
     required this.promptEyebrow,
+    required this.followUpEyebrow,
     required this.reflectionLabel,
     required this.reflectionHint,
     required this.tagLabel,
     required this.growthTag,
     required this.escapeTag,
+    required this.otherTag,
     required this.saveLabel,
     required this.savedTitle,
     required this.savedBody,
+    required this.emptyContentHint,
+    required this.missingTagHint,
     required this.disabledTitle,
     required this.disabledBody,
     required this.historyTitle,
     required this.historyEmpty,
     required this.prompts,
+    required this.followUpPrompts,
   });
 
   final String title;
@@ -545,19 +616,88 @@ class DaytimeInterruptCopy {
   final String recordedTemplate;
   final String pendingLabel;
   final String promptEyebrow;
+
+  /// 追加追问区块的标题。
+  final String followUpEyebrow;
   final String reflectionLabel;
   final String reflectionHint;
   final String tagLabel;
   final String growthTag;
   final String escapeTag;
+
+  /// 第三种归类：用来容纳休息、恢复或现实责任等无法归入前两项的行为。
+  final String otherTag;
   final String saveLabel;
   final String savedTitle;
   final String savedBody;
+  final String emptyContentHint;
+  final String missingTagHint;
   final String disabledTitle;
   final String disabledBody;
   final String historyTitle;
   final String historyEmpty;
+
+  /// 六个示例时点对应的自省问题。
   final List<InterruptPrompt> prompts;
+
+  /// 原文额外建议的三条追加追问，可在通勤、散步等场景使用。
+  final List<InterruptPrompt> followUpPrompts;
+}
+
+/// 行动反馈闭环的文案。
+///
+/// 对齐规范 §8.1：建议的产品记录模板是
+/// 「尝试了什么 → 发生了什么 → 得到什么认识 → 下一次调整什么」。
+/// 记录只用于回看与调整方法，不生成分数或与他人比较。
+class ActionFeedbackCopy {
+  const ActionFeedbackCopy({
+    required this.title,
+    required this.subtitle,
+    required this.attemptedLabel,
+    required this.attemptedHint,
+    required this.happenedLabel,
+    required this.happenedHint,
+    required this.insightLabel,
+    required this.insightHint,
+    required this.adjustmentLabel,
+    required this.adjustmentHint,
+    required this.saveLabel,
+    required this.savedTitle,
+    required this.savedBody,
+    required this.emptyHint,
+    required this.historyTitle,
+    required this.historyEmpty,
+    required this.emptyValue,
+  });
+
+  final String title;
+  final String subtitle;
+
+  /// 第一步：尝试了什么的字段名与提示。
+  final String attemptedLabel;
+  final String attemptedHint;
+
+  /// 第二步：发生了什么的字段名与提示。
+  final String happenedLabel;
+  final String happenedHint;
+
+  /// 第三步：得到什么认识的字段名与提示。
+  final String insightLabel;
+  final String insightHint;
+
+  /// 第四步：下一次调整什么的字段名与提示。
+  final String adjustmentLabel;
+  final String adjustmentHint;
+
+  final String saveLabel;
+  final String savedTitle;
+  final String savedBody;
+  final String emptyHint;
+  final String historyTitle;
+  final String historyEmpty;
+
+  /// 某一步没有填写时的占位文本。
+  final String emptyValue;
 }
 
 class HomeAntiVisionCopy {
@@ -581,21 +721,15 @@ class HomeAntiVisionCopy {
 class NeutralCopyEngine {
   const NeutralCopyEngine._();
 
-  static String deviationNoun({
-    required bool intense,
-  }) {
+  static String deviationNoun({required bool intense}) {
     return intense ? '强烈拉扯' : '日常拉扯';
   }
 
-  static String deviationFrame({
-    required bool intense,
-  }) {
-    return intense ? '这不是你的错，是旧惯性的防御。' : '这不是失败，只是一条珍贵的数据。';
+  static String deviationFrame({required bool intense}) {
+    return intense ? '这只是一次偏离记录，原因仍需要你自己核对。' : '这不是失败，只是一条数据。';
   }
 
-  static String returnSignalPhrase({
-    required bool strong,
-  }) {
+  static String returnSignalPhrase({required bool strong}) {
     return strong ? '你已经开始主动把自己带回来了' : '这一周已经出现第一批回流信号';
   }
 
@@ -636,23 +770,23 @@ class NeutralCopyEngine {
       'match' => const CheckinCopy(
         optionLabel: '完全匹配，状态很好',
         sampleStatusTag: '完全匹配',
-        systemComment: '今天的行为与新身份一致，这是一条稳定的新证据。',
+        systemComment: '今天的行为与当前身份方向一致，这是一条新的记录。',
         completionTitle: '已完成今日校验',
-        completionBody: '你今天和新的自己站在同一边。\n这份稳定，会慢慢长成新的惯性。',
+        completionBody: '你今天和新的自己站在同一边。\n这次匹配已经记下来了。',
       ),
       'partial' => const CheckinCopy(
-        optionLabel: '部分偏离，被旧习惯拉扯',
+        optionLabel: '部分偏离，动作没有完全走稳',
         sampleStatusTag: '部分偏离',
-        systemComment: '今天出现了轻微拉扯，系统已记录为旧惯性样本。',
-        completionTitle: '已收录至惯性样本库',
-        completionBody: '这不是失败，只是一条珍贵的数据。\n看见它，就是在松动旧惯性。',
+        systemComment: '今天出现了轻微拉扯，已记下一条偏离样本。',
+        completionTitle: '已记录这次偏离',
+        completionBody: '这不是失败，只是一条数据。\n看见它，就有机会调整方法。',
       ),
       'full_deviation' => const CheckinCopy(
         optionLabel: '完全偏离，只记作偏差数据',
         sampleStatusTag: '完全偏离',
-        systemComment: '今天明显偏离了目标，但系统只将其视作一次旧惯性回弹。',
-        completionTitle: '已收录至惯性样本库',
-        completionBody: '这不是你的错，是旧惯性在自我防御。\n先被接住，再继续向前。',
+        systemComment: '今天明显偏离了目标，可以先看看是哪些因素在影响。',
+        completionTitle: '已记录这次偏离',
+        completionBody: '这次偏离已经记下来了。\n它不是评判，而是下一次调整方法的依据。',
       ),
       _ => const CheckinCopy(
         optionLabel: '记录今天的状态',
@@ -669,11 +803,11 @@ class NeutralCopyEngine {
   }
 
   static String sosIntroTitle() {
-    return '这不是你的错，\n是旧惯性的防御。';
+    return '先停一下，\n看看刚才发生了什么。';
   }
 
   static String sosIntroBody() {
-    return '你正试图改变，潜意识感到了害怕。\n深呼吸，告诉系统刚才发生了什么？';
+    return '原因可能来自内部状态，也可能来自现实条件。\n深呼吸，先记下刚才发生了什么？';
   }
 
   static String sosSaving() {
@@ -681,11 +815,11 @@ class NeutralCopyEngine {
   }
 
   static String sosDoneTitle() {
-    return '已记作一次旧惯性波动';
+    return '这次状态已经记下来了';
   }
 
   static String sosDoneBody(String selectedLabel) {
-    return '刚才发生的是：$selectedLabel\n\n你没有做错什么，系统只是先替你把它接住。';
+    return '刚才发生的是：$selectedLabel\n\n先把它记下来。接下来可以看看是什么触发了它。';
   }
 
   static String weeklySummaryTitle({
@@ -709,7 +843,7 @@ class NeutralCopyEngine {
     }
 
     if (fullDeviationCount > partialCount) {
-      return '这一周旧惯性的反扑更明显一些';
+      return '这一周偏离的记录更多一些';
     }
 
     return '这一周处在拉扯中，但已经开始被看见';
@@ -787,9 +921,7 @@ class NeutralCopyEngine {
     );
   }
 
-  static HomeSuggestionCopy homeNeedCheckin({
-    required bool justEndedFocus,
-  }) {
+  static HomeSuggestionCopy homeNeedCheckin({required bool justEndedFocus}) {
     return HomeSuggestionCopy(
       title: '先完成今日校验',
       body: justEndedFocus
@@ -810,7 +942,7 @@ class NeutralCopyEngine {
   static HomeSuggestionCopy homeAfterVacuumReturn(String minAction) {
     return HomeSuggestionCopy(
       title: '现在直接回到最小动作',
-      body: '你刚完成一段真空专注，说明拉扯已经被放下来了。${returnToActionPhrase(minAction)}',
+      body: '你刚完成一段真空专注。${returnToActionPhrase(minAction)}',
       actionLabel: '看回流记录',
     );
   }
@@ -826,7 +958,7 @@ class NeutralCopyEngine {
   static HomeSuggestionCopy homePartialDeviation(String minAction) {
     return HomeSuggestionCopy(
       title: '先把动作收小，再继续',
-      body: '今天有一点被旧习惯拉走了，但不用补偿。${keepActionSmallPhrase(minAction)}',
+      body: '今天的动作没有完全走稳，但不用补偿。${keepActionSmallPhrase(minAction)}',
       actionLabel: '看偏离记录',
     );
   }
@@ -854,7 +986,8 @@ class NeutralCopyEngine {
   }) {
     return HomeSuggestionCopy(
       title: '把今天这一个动作做稳',
-      body: '这周已经出现 $vacuumFocusCount 次真空专注、$matchCount 次完全匹配。${smallestActionPhrase(minAction)}',
+      body:
+          '这周已经出现 $vacuumFocusCount 次真空专注、$matchCount 次完全匹配。${smallestActionPhrase(minAction)}',
       actionLabel: '查看本周回流',
     );
   }
@@ -869,9 +1002,9 @@ class NeutralCopyEngine {
 
   static String insightsFilterLead(String filterKey) {
     return switch (filterKey) {
-      'all' => '偏差=迭代数据，偏差≠失败。\n这里记录了最近 7 天被旧惯性拉扯的时刻。',
+      'all' => '偏差=迭代数据，偏差≠失败。\n这里记录了最近 7 天的状态样本。',
       'daily_deviation' => '这里聚焦每天的日常拉扯。先看清最常发生的偏离，再决定要把动作缩到哪里。',
-      'sos' => '这里是最强烈拉扯被系统接住的时刻。先被接住，再慢慢回到今天这一小步。',
+      'sos' => '这里是状态波动最明显的时刻。先记下来，再慢慢回到今天这一小步。',
       'restructure' => '这里保存身份重构留下的锚点。${anchorPhrase()}',
       'vacuum_focus' => '这里记录你主动把自己带回来的证据。每一段完成的真空专注，都是回流正在发生。',
       _ => '这里记录了最近 7 天的状态样本。',
@@ -890,12 +1023,13 @@ class NeutralCopyEngine {
       'daily_deviation' => FilterContextCopy(
         eyebrow: '当前筛选：每日偏离',
         title: '先看日常拉扯最常从哪里开始',
-        body: '最近 7 天记录到部分偏离 $partialCount 次、完全偏离 $fullDeviationCount 次。先识别最常见的偏离场景，再把动作收小。',
+        body:
+            '最近 7 天记录到部分偏离 $partialCount 次、完全偏离 $fullDeviationCount 次。先识别最常见的偏离场景，再把动作收小。',
       ),
       'sos' => FilterContextCopy(
         eyebrow: '当前筛选：SOS',
         title: '先看那些最需要被接住的时刻',
-        body: '最近 7 天触发 SOS $sosCount 次。这里不是失败记录，而是潜意识最强烈防御出现时，你依然留下来的证据。',
+        body: '最近 7 天触发 SOS $sosCount 次。这里不是失败记录，而是状态波动最明显时，你依然留下来的记录。',
       ),
       'restructure' => FilterContextCopy(
         eyebrow: '当前筛选：首次重构',
@@ -1136,7 +1270,7 @@ class NeutralCopyEngine {
       historyEmptyBody: '当前这次首次重构已经被保留下来了。后续每一次新的身份重构，都会继续沉淀在这里。',
       yearlyEmptyTitle: '年度归档还没有展开',
       yearlyEmptyBody: '当你有年度身份快照后，这里会按年份沉淀身份、信念和样本总量。',
-      minActionLabel: '当前最小动作',
+      minActionLabel: '最小启动行动',
       yearlyIdentityLabel: '年度身份快照',
       yearlyBeliefLabel: '年度信念快照',
       yearlySampleCountLabel: '年度样本总量',

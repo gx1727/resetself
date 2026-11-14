@@ -10,7 +10,7 @@ enum RestructureRestartChoice {
   /// 彻底清空所有已有数据后重建。
   clearAll,
 
-  /// 只修改上一次的 9 问回答，不清空数据。
+  /// 只修改上一次写下的回答，不清空数据。
   editLastAnswers,
 }
 
@@ -67,13 +67,10 @@ Future<bool?> _confirmClearAll(BuildContext context) {
       backgroundColor: Colors.white,
       title: const Text(
         '确定彻底清空重建？',
-        style: TextStyle(
-          color: Color(0xFF2D2D2D),
-          fontWeight: FontWeight.w700,
-        ),
+        style: TextStyle(color: Color(0xFF2D2D2D), fontWeight: FontWeight.w700),
       ),
       content: const Text(
-        '这会清空所有已有数据，包括身份、9 问回答、每日校验与 SOS 记录等，清空后无法恢复。',
+        '这会清空所有已有数据，包括身份、重构回答、晨间原稿、每日校验与 SOS 记录等，清空后无法恢复。',
         style: TextStyle(color: Color(0xFF5B5B5B), height: 1.6),
       ),
       actions: [
@@ -117,10 +114,11 @@ class _RestructureRestartSheet extends StatelessWidget {
                     children: [
                       Text(
                         '重新进入 24h 重构',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: const Color(0xFFE5E5EA),
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: const Color(0xFFE5E5EA),
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -147,18 +145,19 @@ class _RestructureRestartSheet extends StatelessWidget {
               icon: Icons.autorenew_rounded,
               accentColor: const Color(0xFFC2A878),
               title: '彻底清空重建',
-              description: '会清空所有已有数据：身份、9 问回答、每日校验、SOS 记录等，且无法恢复。',
-              onTap: () => Navigator.of(context)
-                  .pop(RestructureRestartChoice.clearAll),
+              description: '会清空所有已有数据：身份、重构回答、晨间原稿、每日校验、SOS 记录等，且无法恢复。',
+              onTap: () =>
+                  Navigator.of(context).pop(RestructureRestartChoice.clearAll),
             ),
             const SizedBox(height: 12),
             _RestartOptionCard(
               icon: Icons.edit_outlined,
               accentColor: const Color(0xFF819B8E),
-              title: '修改上一次的 9 问回答',
+              title: '修改上一次的回答',
               description: '保留现有数据，只更新你这一次写下的回答。',
-              onTap: () => Navigator.of(context)
-                  .pop(RestructureRestartChoice.editLastAnswers),
+              onTap: () => Navigator.of(
+                context,
+              ).pop(RestructureRestartChoice.editLastAnswers),
             ),
           ],
         ),

@@ -13,18 +13,22 @@ import 'restructure_restart_sheet.dart';
 
 final restructureArchiveProvider =
     FutureProvider.autoDispose<List<RestructureArchiveRecord>>((ref) {
-  return ref.watch(userProfileRepositoryProvider).getRestructureArchiveRecords();
-});
+      return ref
+          .watch(userProfileRepositoryProvider)
+          .getRestructureArchiveRecords();
+    });
 
 final yearlyArchiveProvider =
     FutureProvider.autoDispose<List<YearlyArchiveRecord>>((ref) {
-  return ref.watch(userProfileRepositoryProvider).getYearlyArchiveRecords();
-});
+      return ref.watch(userProfileRepositoryProvider).getYearlyArchiveRecords();
+    });
 
 final yearlyReportProvider =
     FutureProvider.autoDispose<List<YearlyReportSummary>>((ref) {
-  return ref.watch(userProfileRepositoryProvider).getYearlyReportSummaries();
-});
+      return ref
+          .watch(userProfileRepositoryProvider)
+          .getYearlyReportSummaries();
+    });
 
 class RestructureHubPage extends ConsumerWidget {
   const RestructureHubPage({super.key});
@@ -46,53 +50,58 @@ class RestructureHubPage extends ConsumerWidget {
         data: (records) => yearlyArchiveAsync.when(
           data: (yearlyArchives) => yearlyReportAsync.when(
             data: (yearlyReports) {
-            final latestRecord = records.where((record) => record.isLatest).firstOrNull;
-            final historyRecords = records.where((record) => !record.isLatest).toList();
+              final latestRecord = records
+                  .where((record) => record.isLatest)
+                  .firstOrNull;
+              final historyRecords = records
+                  .where((record) => !record.isLatest)
+                  .toList();
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _CurrentIdentityCard(
-                  identityText: profile.identityText,
-                  minAction: profile.todayMinAction,
-                  latestRecord: latestRecord,
-                  onTapRefresh: () => openRestructureRestartFlow(context, ref),
-                ),
-                if (latestRecord != null) ...[
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _CurrentIdentityCard(
+                    identityText: profile.identityText,
+                    minAction: profile.todayMinAction,
+                    latestRecord: latestRecord,
+                    onTapRefresh: () =>
+                        openRestructureRestartFlow(context, ref),
+                  ),
+                  if (latestRecord != null) ...[
+                    const SizedBox(height: 16),
+                    _GameLoopCard(record: latestRecord),
+                  ],
                   const SizedBox(height: 16),
-                  _GameLoopCard(record: latestRecord),
-                ],
-                const SizedBox(height: 16),
-                anchorsAsync.when(
-                  data: (anchors) => currentAnchorAsync.when(
-                    data: (current) => _IdentityLibraryCard(
-                      anchors: anchors,
-                      currentId: current?.id,
-                      onSelect: (anchor) async {
-                        final anchorId = anchor.id;
-                        if (anchorId == null) {
-                          return;
-                        }
-                        final repository =
-                            ref.read(userProfileRepositoryProvider);
-                        await repository.setCurrentIdentityAnchor(anchorId);
-                        await repository.syncIdentityTextFromCurrentAnchor();
-                        ref.invalidate(activeIdentityAnchorsProvider);
-                        ref.invalidate(currentIdentityAnchorProvider);
-                        await ref.read(appControllerProvider).reloadProfile();
-                      },
+                  anchorsAsync.when(
+                    data: (anchors) => currentAnchorAsync.when(
+                      data: (current) => _IdentityLibraryCard(
+                        anchors: anchors,
+                        currentId: current?.id,
+                        onSelect: (anchor) async {
+                          final anchorId = anchor.id;
+                          if (anchorId == null) {
+                            return;
+                          }
+                          final repository = ref.read(
+                            userProfileRepositoryProvider,
+                          );
+                          await repository.setCurrentIdentityAnchor(anchorId);
+                          await repository.syncIdentityTextFromCurrentAnchor();
+                          ref.invalidate(activeIdentityAnchorsProvider);
+                          ref.invalidate(currentIdentityAnchorProvider);
+                          await ref.read(appControllerProvider).reloadProfile();
+                        },
+                      ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (error, stackTrace) => const SizedBox.shrink(),
                     ),
                     loading: () => const SizedBox.shrink(),
                     error: (error, stackTrace) => const SizedBox.shrink(),
                   ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (error, stackTrace) => const SizedBox.shrink(),
-                ),
-                const SizedBox(height: 16),
-                if (historyRecords.isEmpty)
-                  const _ArchiveEmptyCard()
-                else
-                  ...[
+                  const SizedBox(height: 16),
+                  if (historyRecords.isEmpty)
+                    const _ArchiveEmptyCard()
+                  else ...[
                     Text(
                       copy.historyTitle,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -106,18 +115,18 @@ class RestructureHubPage extends ConsumerWidget {
                       const SizedBox(height: 12),
                     ],
                   ],
-                const SizedBox(height: 8),
-                if (yearlyArchives.isEmpty)
-                  const _YearlyArchiveEmptyCard()
-                else
-                  ...[
+                  const SizedBox(height: 8),
+                  if (yearlyArchives.isEmpty)
+                    const _YearlyArchiveEmptyCard()
+                  else ...[
                     if (yearlyReports.isNotEmpty) ...[
                       Text(
                         copy.yearlyReportTitle,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF2D2D2D),
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF2D2D2D),
+                            ),
                       ),
                       const SizedBox(height: 12),
                       for (final report in yearlyReports) ...[
@@ -138,14 +147,14 @@ class RestructureHubPage extends ConsumerWidget {
                       const SizedBox(height: 12),
                     ],
                   ],
-              ],
-            );
+                ],
+              );
             },
             loading: () => Text(
               copy.yearlyReportLoading,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF8E8E93),
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF8E8E93)),
             ),
             error: (error, stackTrace) => Text(
               copy.yearlyReportError,
@@ -157,9 +166,9 @@ class RestructureHubPage extends ConsumerWidget {
           ),
           loading: () => Text(
             copy.yearlyLoading,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF8E8E93),
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF8E8E93)),
           ),
           error: (error, stackTrace) => Text(
             copy.yearlyError,
@@ -171,9 +180,9 @@ class RestructureHubPage extends ConsumerWidget {
         ),
         loading: () => Text(
           copy.historyLoading,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: const Color(0xFF8E8E93),
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF8E8E93)),
         ),
         error: (error, stackTrace) => Text(
           copy.historyError,
@@ -206,7 +215,9 @@ class _CurrentIdentityCard extends StatelessWidget {
     final displayedIdentity = identityText.trim().isEmpty
         ? '我是一个看重长远价值的人'
         : identityText.trim();
-    final displayedAction = minAction.trim().isEmpty ? '清理办公桌面 5 分钟' : minAction.trim();
+    final displayedAction = minAction.trim().isEmpty
+        ? '清理办公桌面 5 分钟'
+        : minAction.trim();
 
     return Container(
       width: double.infinity,
@@ -279,7 +290,6 @@ class _GameLoopCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final archiveCopy = CopyStrategy.archive();
-    final pageCopy = NeutralCopyEngine.restructureArchivePage();
 
     return Container(
       width: double.infinity,
@@ -321,8 +331,18 @@ class _GameLoopCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _ArchiveField(
-            label: pageCopy.minActionLabel,
+            label: archiveCopy.fieldDailyLevers,
+            value: record.dailyLevers,
+          ),
+          const SizedBox(height: 10),
+          _ArchiveField(
+            label: archiveCopy.fieldMinAction,
             value: record.minActionDraft,
+          ),
+          const SizedBox(height: 10),
+          _ArchiveField(
+            label: archiveCopy.fieldValueConstraints,
+            value: record.valueConstraints,
           ),
           const SizedBox(height: 10),
           _ArchiveField(
@@ -510,7 +530,10 @@ class _ArchiveRecordCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF4F8FB),
                     borderRadius: BorderRadius.circular(999),
@@ -533,20 +556,35 @@ class _ArchiveRecordCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _ArchiveField(label: archiveCopy.fieldIdentity, value: record.identityDraft),
+            _ArchiveField(
+              label: archiveCopy.fieldIdentity,
+              value: record.identityDraft,
+            ),
             const SizedBox(height: 10),
-            _ArchiveField(label: copy.minActionLabel, value: record.minActionDraft),
+            _ArchiveField(
+              label: copy.minActionLabel,
+              value: record.minActionDraft,
+            ),
             if (record.beliefDraft.trim().isNotEmpty) ...[
               const SizedBox(height: 10),
-              _ArchiveField(label: archiveCopy.fieldBelief, value: record.beliefDraft),
+              _ArchiveField(
+                label: archiveCopy.fieldBelief,
+                value: record.beliefDraft,
+              ),
             ],
             if (record.fearContent.trim().isNotEmpty) ...[
               const SizedBox(height: 10),
-              _ArchiveField(label: archiveCopy.fieldFear, value: record.fearContent),
+              _ArchiveField(
+                label: archiveCopy.fieldFear,
+                value: record.fearContent,
+              ),
             ],
             if (record.antiVision.trim().isNotEmpty) ...[
               const SizedBox(height: 10),
-              _ArchiveField(label: archiveCopy.fieldAntiVision, value: record.antiVision),
+              _ArchiveField(
+                label: archiveCopy.fieldAntiVision,
+                value: record.antiVision,
+              ),
             ],
           ],
         ),
@@ -556,10 +594,7 @@ class _ArchiveRecordCard extends StatelessWidget {
 }
 
 class _ArchiveField extends StatelessWidget {
-  const _ArchiveField({
-    required this.label,
-    required this.value,
-  });
+  const _ArchiveField({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -571,13 +606,15 @@ class _ArchiveField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: const Color(0xFF8E8E93),
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(color: const Color(0xFF8E8E93)),
         ),
         const SizedBox(height: 4),
         Text(
-          value.trim().isEmpty ? NeutralCopyEngine.archiveFieldEmpty() : value.trim(),
+          value.trim().isEmpty
+              ? NeutralCopyEngine.archiveFieldEmpty()
+              : value.trim(),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: const Color(0xFF2D2D2D),
             height: 1.6,
@@ -606,7 +643,10 @@ class _YearlyArchiveCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE8F0EC),
                     borderRadius: BorderRadius.circular(999),
@@ -629,13 +669,25 @@ class _YearlyArchiveCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _ArchiveField(label: archiveCopy.fieldYearlyIdentity, value: archive.identitySnapshot),
+            _ArchiveField(
+              label: archiveCopy.fieldYearlyIdentity,
+              value: archive.identitySnapshot,
+            ),
             const SizedBox(height: 10),
-            _ArchiveField(label: copy.yearlyBeliefLabel, value: archive.beliefSnapshot),
+            _ArchiveField(
+              label: copy.yearlyBeliefLabel,
+              value: archive.beliefSnapshot,
+            ),
             const SizedBox(height: 10),
-            _ArchiveField(label: copy.yearlySampleCountLabel, value: '${archive.sampleCount} 条'),
+            _ArchiveField(
+              label: copy.yearlySampleCountLabel,
+              value: '${archive.sampleCount} 条',
+            ),
             const SizedBox(height: 10),
-            _ArchiveField(label: copy.yearlyStabilityLabel, value: archive.checkinStability),
+            _ArchiveField(
+              label: copy.yearlyStabilityLabel,
+              value: archive.checkinStability,
+            ),
           ],
         ),
       ),

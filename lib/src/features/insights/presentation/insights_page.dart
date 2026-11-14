@@ -324,7 +324,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                             ),
                             timeLabel: _formatTimeLabel(sample.createdAt),
                             description: sample.content.isEmpty
-                                ? '系统记录了一次旧惯性波动。'
+                                ? '这条记录没有写下内容。'
                                 : sample.content,
                             faded: sample.sourceType == 'daily_checkin',
                           ),
@@ -385,7 +385,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
 String _emptyStateText(SampleFilter filter) {
   switch (filter) {
     case SampleFilter.all:
-      return '这是一张白纸，等待你第一次看见旧惯性出现的样子。';
+      return '这里还是一张白纸。开始记录后，它会慢慢有内容。';
     case SampleFilter.dailyDeviation:
       return '最近 7 天还没有记录到每日偏离，新的惯性正在慢慢成形。';
     case SampleFilter.sos:
@@ -1034,7 +1034,7 @@ class _DeviationPatternCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               patterns.isEmpty
-                  ? '继续记录就好，系统会在样本足够时把旧惯性慢慢显影出来。'
+                  ? '继续记录就好，样本足够时这些模式会更清楚。'
                   : '不急着解决全部问题，先反复看见最常出现的那几种模式。',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: const Color(0xFF5B5B5B),

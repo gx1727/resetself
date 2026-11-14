@@ -9,13 +9,16 @@ import '../../../data/models/inertia_sample.dart';
 import '../../home/application/home_providers.dart';
 import '../../vacuum/application/vacuum_mode_providers.dart';
 
-/// 日间打断：把理论里"白天每小时一次 3 分钟自省"落成应用内页面。
+/// 日间打断：把理论里"白天多次、每次 3 分钟自省"落成应用内页面。
 ///
-/// 因为没有系统通知底座，这里以固定六个时点 + 手动进入的方式实现：
-/// 每个时点对应一句来自原版理论的追问，用户写下觉察并归类为
-/// 「成长性行为 / 逃避性行为」，最终沉淀为 `daytime_interrupt` 惯性样本。
+/// 固定六个示例时点 + 三条追加追问，每个问题来自原版理论的追问，
+/// 用户写下觉察并归类为「成长性行为 / 逃避性行为」，
+/// 最终沉淀为 `daytime_interrupt` 惯性样本。
 class DaytimeInterruptPage extends ConsumerStatefulWidget {
-  const DaytimeInterruptPage({super.key});
+  const DaytimeInterruptPage({super.key, this.initialPromptId});
+
+  /// 由通知点击带入的问题 id；命中时会直接选中对应问题。
+  final String? initialPromptId;
 
   @override
   ConsumerState<DaytimeInterruptPage> createState() =>
@@ -28,7 +31,22 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
   String? _selectedTag;
   bool _isSaving = false;
   String? _errorMessage;
-  String? _savedPromptTime;
+  String? _savedPromptId;
+  String _reflectionText = '';
+
+  @override
+  void initState() {
+    super.initState();
+    final promptId = widget.initialPromptId;
+    if (promptId != null && promptId.isNotEmpty) {
+      final copy = CopyStrategy.daytimeInterrupt();
+      final allPrompts = [...copy.prompts, ...copy.followUpPrompts];
+      final index = allPrompts.indexWhere((prompt) => prompt.id == promptId);
+      if (index >= 0) {
+        _selectedIndex = index;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -42,8 +60,18 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
     }
 
     final copy = CopyStrategy.daytimeInterrupt();
-    final tag = _selectedTag ?? copy.growthTag;
     final content = _controller.text.trim();
+    final tag = _selectedTag;
+
+    // 空回答不计入自省次数，未选择归类时不替用户默认归类。
+    if (content.isEmpty || tag == null) {
+      setState(() {
+        _errorMessage = content.isEmpty
+            ? copy.emptyContentHint
+            : copy.missingTagHint;
+      });
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -54,7 +82,6 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
       await ref
           .read(userProfileRepositoryProvider)
           .saveDaytimeInterruptReflection(
-            promptLabel: '${prompt.time} · ${prompt.question}',
             content: content,
             statusTag: tag,
           );
@@ -65,8 +92,9 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
 
       _controller.clear();
       setState(() {
-        _savedPromptTime = prompt.time;
+        _savedPromptId = prompt.id;
         _selectedTag = null;
+        _reflectionText = '';
       });
     } catch (error) {
       if (!mounted) {
@@ -93,8 +121,16 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
     final interruptEnabled =
         settingsAsync.valueOrNull?.interruptEnabled ?? true;
 
-    final selectedIndex = _selectedIndex ?? _defaultPromptIndex(copy.prompts);
-    final selectedPrompt = copy.prompts[selectedIndex];
+    final allPrompts = [...copy.prompts, ...copy.followUpPrompts];
+    final configuredTimes =
+        settingsAsync.valueOrNull?.interruptTimeList ?? const <String>[];
+    final promptTimes = [
+      for (var i = 0; i < copy.prompts.length; i++)
+        i < configuredTimes.length ? configuredTimes[i] : copy.prompts[i].time,
+    ];
+    final selectedIndex = _selectedIndex ?? _defaultPromptIndex(promptTimes);
+    final selectedPrompt = allPrompts[selectedIndex];
+    final followUpStartIndex = copy.prompts.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F5),
@@ -107,7 +143,9 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => context.pop(),
+                    onPressed: () => context.canPop()
+                        ? context.pop()
+                        : context.go(AppRoutes.home),
                     icon: const Icon(
                       Icons.chevron_left_rounded,
                       size: 28,
@@ -134,11 +172,12 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
                     children: [
                       Text(
                         copy.subtitle,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: const Color(0xFF2D2D2D),
-                          fontWeight: FontWeight.w600,
-                          height: 1.5,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: const Color(0xFF2D2D2D),
+                              fontWeight: FontWeight.w600,
+                              height: 1.5,
+                            ),
                       ),
                       const SizedBox(height: 16),
                       Container(
@@ -163,9 +202,7 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
                               CopyStrategy.daytimeInterruptRecorded(
                                 reflections.length,
                               ),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
+                              style: Theme.of(context).textTheme.labelMedium
                                   ?.copyWith(
                                     color: const Color(0xFF819B8E),
                                     fontWeight: FontWeight.w700,
@@ -180,24 +217,60 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
                       else ...[
                         Text(
                           copy.promptEyebrow,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: const Color(0xFF8E8E93),
-                            letterSpacing: 1.2,
-                          ),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: const Color(0xFF8E8E93),
+                                letterSpacing: 1.2,
+                              ),
                         ),
                         const SizedBox(height: 12),
                         for (var i = 0; i < copy.prompts.length; i++) ...[
                           _InterruptPromptTile(
                             prompt: copy.prompts[i],
+                            time: promptTimes[i],
                             isSelected: i == selectedIndex,
-                            isSaved: _savedPromptTime == copy.prompts[i].time,
+                            isSaved: _savedPromptId == copy.prompts[i].id,
                             onTap: () {
                               _controller.clear();
                               setState(() {
                                 _selectedIndex = i;
                                 _selectedTag = null;
-                                _savedPromptTime = null;
+                                _savedPromptId = null;
                                 _errorMessage = null;
+                                _reflectionText = '';
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        const SizedBox(height: 12),
+                        Text(
+                          copy.followUpEyebrow,
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: const Color(0xFF8E8E93),
+                                letterSpacing: 1.2,
+                              ),
+                        ),
+                        const SizedBox(height: 12),
+                        for (
+                          var i = 0;
+                          i < copy.followUpPrompts.length;
+                          i++
+                        ) ...[
+                          _InterruptPromptTile(
+                            prompt: copy.followUpPrompts[i],
+                            isSelected: followUpStartIndex + i == selectedIndex,
+                            isSaved:
+                                _savedPromptId == copy.followUpPrompts[i].id,
+                            onTap: () {
+                              _controller.clear();
+                              setState(() {
+                                _selectedIndex = followUpStartIndex + i;
+                                _selectedTag = null;
+                                _savedPromptId = null;
+                                _errorMessage = null;
+                                _reflectionText = '';
                               });
                             },
                           ),
@@ -209,7 +282,15 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
                           controller: _controller,
                           selectedTag: _selectedTag,
                           isSaving: _isSaving,
+                          canSave:
+                              _reflectionText.trim().isNotEmpty &&
+                              _selectedTag != null,
                           errorMessage: _errorMessage,
+                          onChangedText: (value) {
+                            setState(() {
+                              _reflectionText = value;
+                            });
+                          },
                           onSelectTag: (tag) {
                             setState(() {
                               _selectedTag = tag;
@@ -230,9 +311,8 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
                       if (reflections.isEmpty)
                         Text(
                           copy.historyEmpty,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF8E8E93),
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: const Color(0xFF8E8E93)),
                         )
                       else
                         for (final sample in reflections) ...[
@@ -257,9 +337,11 @@ class _InterruptPromptTile extends StatelessWidget {
     required this.isSelected,
     required this.isSaved,
     required this.onTap,
+    this.time,
   });
 
   final InterruptPrompt prompt;
+  final String? time;
   final bool isSelected;
   final bool isSaved;
   final VoidCallback onTap;
@@ -290,7 +372,7 @@ class _InterruptPromptTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
-                prompt.time,
+                time ?? prompt.time,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: const Color(0xFF819B8E),
                   fontWeight: FontWeight.w700,
@@ -328,7 +410,9 @@ class _InterruptReflectionForm extends StatelessWidget {
     required this.controller,
     required this.selectedTag,
     required this.isSaving,
+    required this.canSave,
     required this.errorMessage,
+    required this.onChangedText,
     required this.onSelectTag,
     required this.onSave,
   });
@@ -337,7 +421,9 @@ class _InterruptReflectionForm extends StatelessWidget {
   final TextEditingController controller;
   final String? selectedTag;
   final bool isSaving;
+  final bool canSave;
   final String? errorMessage;
+  final ValueChanged<String> onChangedText;
   final ValueChanged<String> onSelectTag;
   final VoidCallback onSave;
 
@@ -356,15 +442,16 @@ class _InterruptReflectionForm extends StatelessWidget {
         children: [
           Text(
             copy.reflectionLabel,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: const Color(0xFF8E8E93),
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: const Color(0xFF8E8E93)),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: controller,
             minLines: 3,
             maxLines: 5,
+            onChanged: onChangedText,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: const Color(0xFF2D2D2D),
               height: 1.6,
@@ -380,9 +467,9 @@ class _InterruptReflectionForm extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             copy.tagLabel,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: const Color(0xFF8E8E93),
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: const Color(0xFF8E8E93)),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -398,13 +485,18 @@ class _InterruptReflectionForm extends StatelessWidget {
                 selected: selectedTag == copy.escapeTag,
                 onTap: () => onSelectTag(copy.escapeTag),
               ),
+              _InterruptTagChip(
+                label: copy.otherTag,
+                selected: selectedTag == copy.otherTag,
+                onTap: () => onSelectTag(copy.otherTag),
+              ),
             ],
           ),
           const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: isSaving ? null : onSave,
+              onPressed: (isSaving || !canSave) ? null : onSave,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -497,9 +589,9 @@ class _InterruptHistoryTile extends StatelessWidget {
               const Spacer(),
               Text(
                 _formatInterruptTime(sample.createdAt),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF8E8E93),
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF8E8E93)),
               ),
             ],
           ),
@@ -561,15 +653,15 @@ class _InterruptDisabledCard extends StatelessWidget {
   }
 }
 
-int _defaultPromptIndex(List<InterruptPrompt> prompts) {
+int _defaultPromptIndex(List<String> times) {
   final now = DateTime.now();
   final nowMinutes = now.hour * 60 + now.minute;
-  for (var i = 0; i < prompts.length; i++) {
-    if (_minutesOfDay(prompts[i].time) >= nowMinutes) {
+  for (var i = 0; i < times.length; i++) {
+    if (_minutesOfDay(times[i]) >= nowMinutes) {
       return i;
     }
   }
-  return prompts.length - 1;
+  return times.length - 1;
 }
 
 int _minutesOfDay(String time) {

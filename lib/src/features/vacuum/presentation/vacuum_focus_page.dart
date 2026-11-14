@@ -17,8 +17,9 @@ class VacuumFocusPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(vacuumModeSettingsProvider);
     final focusStateAsync = ref.watch(vacuumFocusStateProvider);
-    final hasCompletedInitialRestructure =
-        ref.watch(appControllerProvider).hasCompletedInitialRestructure;
+    final hasCompletedInitialRestructure = ref
+        .watch(appControllerProvider)
+        .hasCompletedInitialRestructure;
 
     return Scaffold(
       backgroundColor: const Color(0xFF121315),
@@ -53,10 +54,7 @@ class VacuumFocusPage extends ConsumerWidget {
                   const Text(
                     '但你仍然可以回到准备区，继续保持当前节奏。',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFF8E8E93),
-                      height: 1.6,
-                    ),
+                    style: TextStyle(color: Color(0xFF8E8E93), height: 1.6),
                   ),
                   const SizedBox(height: 20),
                   OutlinedButton(
@@ -104,7 +102,7 @@ class VacuumFocusPage extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Text(
                     focusState.isActive
-                        ? '你已经进入这一段安静区。接下来只保留当前动作，不和旧惯性拉扯。'
+                        ? '你已经进入这一段安静区。接下来只保留当前动作。'
                         : '从这里开始进入一段真正安静的时间。按下开始后，首页和这里都会同步显示当前专注状态。',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: const Color(0xFFAFAFB4),
@@ -112,15 +110,9 @@ class VacuumFocusPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _FocusHeroCard(
-                    settings: settings,
-                    focusState: focusState,
-                  ),
+                  _FocusHeroCard(settings: settings, focusState: focusState),
                   const SizedBox(height: 16),
-                  _FocusActionCard(
-                    settings: settings,
-                    focusState: focusState,
-                  ),
+                  _FocusActionCard(settings: settings, focusState: focusState),
                   const SizedBox(height: 16),
                   _FocusChecklistCard(
                     settings: settings,
@@ -128,13 +120,16 @@ class VacuumFocusPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   _FocusNoteCard(
-                    hasCompletedInitialRestructure: hasCompletedInitialRestructure,
+                    hasCompletedInitialRestructure:
+                        hasCompletedInitialRestructure,
                     focusState: focusState,
                   ),
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: () async {
-                      final repository = ref.read(userProfileRepositoryProvider);
+                      final repository = ref.read(
+                        userProfileRepositoryProvider,
+                      );
                       if (focusState.isActive) {
                         await repository.stopVacuumFocus();
                       } else {
@@ -159,7 +154,8 @@ class VacuumFocusPage extends ConsumerWidget {
                   const SizedBox(height: 12),
                   if (!focusState.isActive) ...[
                     OutlinedButton(
-                      onPressed: () => context.push(AppRoutes.restructureSetup),
+                      onPressed: () =>
+                          context.push(AppRoutes.restructureMorning),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -194,10 +190,7 @@ class VacuumFocusPage extends ConsumerWidget {
 }
 
 class _FocusHeroCard extends StatelessWidget {
-  const _FocusHeroCard({
-    required this.settings,
-    required this.focusState,
-  });
+  const _FocusHeroCard({required this.settings, required this.focusState});
 
   final VacuumModeSettings settings;
   final VacuumFocusState focusState;
@@ -256,10 +249,7 @@ class _FocusHeroCard extends StatelessWidget {
 }
 
 class _FocusActionCard extends StatelessWidget {
-  const _FocusActionCard({
-    required this.settings,
-    required this.focusState,
-  });
+  const _FocusActionCard({required this.settings, required this.focusState});
 
   final VacuumModeSettings settings;
   final VacuumFocusState focusState;
@@ -292,8 +282,8 @@ class _FocusActionCard extends StatelessWidget {
             summary: focusState.isActive
                 ? '首页和专注页现在会同步显示这一段专注是否正在进行。'
                 : (settings.noiseCutEnabled
-                    ? '优先把消息、短视频和无关标签页留在外面'
-                    : '至少先关掉最容易把你拉走的一个入口'),
+                      ? '优先把消息、短视频和无关标签页留在外面'
+                      : '至少先关掉最容易把你拉走的一个入口'),
           ),
           const SizedBox(height: 10),
           _FocusPill(
@@ -309,10 +299,7 @@ class _FocusActionCard extends StatelessWidget {
 }
 
 class _FocusChecklistCard extends StatelessWidget {
-  const _FocusChecklistCard({
-    required this.settings,
-    required this.focusState,
-  });
+  const _FocusChecklistCard({required this.settings, required this.focusState});
 
   final VacuumModeSettings settings;
   final VacuumFocusState focusState;
@@ -405,8 +392,8 @@ class _FocusNoteCard extends StatelessWidget {
         focusState.isActive
             ? '这段专注结束后，首页会回到未开始状态，你可以再决定是否进入下一段。'
             : (hasCompletedInitialRestructure
-                ? '这一页已经和首页联动。开始后，你会在首页看到当前真空节奏正在进行。'
-                : '这一页会先把你带进安静区，开始后也会同步回到首页状态。'),
+                  ? '这一页已经和首页联动。开始后，你会在首页看到当前真空节奏正在进行。'
+                  : '这一页会先把你带进安静区，开始后也会同步回到首页状态。'),
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: const Color(0xFF8E8E93),
           height: 1.7,
@@ -417,10 +404,7 @@ class _FocusNoteCard extends StatelessWidget {
 }
 
 class _FocusPill extends StatelessWidget {
-  const _FocusPill({
-    required this.label,
-    required this.summary,
-  });
+  const _FocusPill({required this.label, required this.summary});
 
   final String label;
   final String summary;

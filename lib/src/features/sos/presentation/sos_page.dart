@@ -264,7 +264,7 @@ class _SosDoneView extends StatelessWidget {
               const SizedBox(height: 10),
               _CalmStep(text: '先把呼吸放慢，给自己 3 次缓慢吸气和呼气'),
               const SizedBox(height: 8),
-              _CalmStep(text: '承认这只是旧惯性，不把它解释成“我不行”'),
+              _CalmStep(text: '先不给它下结论，也不必把它解释成“我不行”'),
               const SizedBox(height: 8),
               _CalmStep(text: '回到首页，只做今天那个最小动作就够了'),
             ],

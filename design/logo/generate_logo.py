@@ -108,11 +108,12 @@ def mark_vacuum_ring():
 
 
 # ---------------------------------------------------------------- 方案 B 归位环
-RING_RADIUS = 30.0
+ORIGINAL_RING_RADIUS = 30.0
+RING_RADIUS = ORIGINAL_RING_RADIUS * 0.85  # 圆环直径缩小 15%，线宽保持不变
 RING_WIDTH = 6.4
 GAP_START = -30.0  # 缺口右边界（上右）
 GAP_SPAN = 62.0  # 缺口大小
-LEG_DOT_RADIUS = 6.5  # 落点半径
+LEG_DOT_RADIUS = 6.0  # 落点略微缩小，保留小尺寸辨识度
 
 
 def mark_return_ring():
@@ -243,6 +244,12 @@ def render_svg(shapes, label="ResetSelf"):
 
 # 图形外接半径 / 半画布：用于把标记摆进图标安全区
 MARK_BBOX_RATIO = (RING_RADIUS + RING_WIDTH / 2) / CENTER
+# 同步缩小图标占比，避免 render_icon 的尺寸归一化抵消圆环缩小。
+ICON_SIZE_FACTOR = (RING_RADIUS + RING_WIDTH / 2) / (
+    ORIGINAL_RING_RADIUS + RING_WIDTH / 2
+)
+TILE_MARK_RATIO = 0.72 * ICON_SIZE_FACTOR
+ADAPTIVE_MARK_RATIO = 0.611 * ICON_SIZE_FACTOR
 
 
 def render_icon(shapes, size, ratio, background):
@@ -289,11 +296,11 @@ def build_brand():
     save_png(render_png(mono, 1024), "%s-mono-1024.png" % BRAND_SLUG)
     save_png(render_png(inverse, 1024), "%s-inverse-1024.png" % BRAND_SLUG)
 
-    # 方形 App 图标（旧版启动器 / 通用方图）：浅底 + 图形占 72%
+    # 方形 App 图标（旧版启动器 / 通用方图）：浅底 + 图形占约 62%
     for size in (512, 192, 144, 96, 72, 48):
-        save_png(render_icon(primary, size, 0.72, TILE), "%s-tile-%d.png" % (BRAND_SLUG, size))
+        save_png(render_icon(primary, size, TILE_MARK_RATIO, TILE), "%s-tile-%d.png" % (BRAND_SLUG, size))
 
-    # 自适应图标前景：108dp 栅格，图形收进 61% 安全区，透明底由启动器着色
+    # 自适应图标前景：108dp 栅格，图形占约 53%，透明底由启动器着色
     for density, size in (
         ("mdpi", 108),
         ("hdpi", 162),
@@ -302,7 +309,7 @@ def build_brand():
         ("xxxhdpi", 432),
     ):
         save_png(
-            render_icon(primary, size, 0.611, None),
+            render_icon(primary, size, ADAPTIVE_MARK_RATIO, None),
             "%s-foreground-%s.png" % (BRAND_SLUG, density),
         )
 
@@ -390,7 +397,7 @@ def write_preview(primary):
 
   <div class="panel">
     <h2>变体与 App 图标</h2>
-    <div class="note">单色用于受限场景，反白用于深底；方形图标留 72% 图形占比，自适应图标前景收进 61% 安全区</div>
+    <div class="note">圆环直径缩小 15%，保留线宽；单色用于受限场景，反白用于深底；方形图标约 62% 图形占比，自适应图标前景约 53%</div>
     <div class="stage cols">
       <div class="tile white"><img alt="" src="{mono}" style="width:96px"/></div>
       <div class="tile dark"><img alt="" src="{inverse}" style="width:96px"/></div>

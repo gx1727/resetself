@@ -7,6 +7,7 @@ import '../../../app/state/app_controller.dart';
 import '../../../core/copy/neutral_copy_engine.dart';
 import '../../../core/widgets/resetself_mark.dart';
 import '../../../data/database/database_providers.dart';
+import '../../../data/models/action_feedback.dart';
 import '../../../data/models/daily_checkin.dart';
 import '../../../data/models/inertia_sample.dart';
 import '../../../data/models/restructure_archive_record.dart';
@@ -15,6 +16,7 @@ import '../../../data/models/vacuum_mode_settings.dart';
 import '../../../data/models/weekly_review_summary.dart';
 import '../application/home_providers.dart';
 import '../../vacuum/application/vacuum_mode_providers.dart';
+import '../../feedback/application/action_feedback_providers.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -30,6 +32,7 @@ class HomePage extends ConsumerWidget {
     final vacuumFocusStateAsync = ref.watch(vacuumFocusStateProvider);
     final latestRestructureAsync = ref.watch(latestRestructureRecordProvider);
     final todayInterruptAsync = ref.watch(todayInterruptReflectionsProvider);
+    final actionFeedbacksAsync = ref.watch(recentActionFeedbacksProvider);
 
     final identityText = profile.identityText.isEmpty
         ? '“我是一个\n看重长远价值的人”'
@@ -315,6 +318,13 @@ class HomePage extends ConsumerWidget {
                                     .length,
                             onTap: () =>
                                 context.push(AppRoutes.daytimeInterrupt),
+                          ),
+                          const SizedBox(height: 16),
+                          _HomeFeedbackLoopCard(
+                            feedbacks:
+                                actionFeedbacksAsync.valueOrNull ??
+                                const <ActionFeedback>[],
+                            onTap: () => context.push(AppRoutes.actionFeedback),
                           ),
                           const SizedBox(height: 16),
                           AnimatedSwitcher(
@@ -936,6 +946,97 @@ class _HomeInterruptCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HomeFeedbackLoopCard extends StatelessWidget {
+  const _HomeFeedbackLoopCard({
+    required this.feedbacks,
+    required this.onTap,
+  });
+
+  final List<ActionFeedback> feedbacks;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final copy = CopyStrategy.actionFeedback();
+    final latest = feedbacks.isEmpty ? null : feedbacks.first;
+    final summary = latest == null
+        ? copy.historyEmpty
+        : _feedbackPreview(latest, copy);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFF0F0F0)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F0EC),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.loop_rounded,
+                size: 20,
+                color: Color(0xFF819B8E),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    copy.title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: const Color(0xFF2D2D2D),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    summary,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF8E8E93),
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8E8E93)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _feedbackPreview(ActionFeedback feedback, ActionFeedbackCopy copy) {
+  final attempted = feedback.attempted.trim();
+  if (attempted.isNotEmpty) {
+    return '最近一次尝试：$attempted';
+  }
+
+  final happened = feedback.happened.trim();
+  if (happened.isNotEmpty) {
+    return '最近一次观察：$happened';
+  }
+
+  return copy.savedBody;
 }
 
 String? _nextInterruptTime(List<String> times) {

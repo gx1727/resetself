@@ -19,11 +19,7 @@ class OnboardingPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(flex: 2),
-              const Icon(
-                Icons.air_rounded,
-                size: 48,
-                color: Color(0xFF819B8E),
-              ),
+              const Icon(Icons.air_rounded, size: 48, color: Color(0xFF819B8E)),
               const SizedBox(height: 32),
               Text(
                 '欢迎来到\n认知真空区。',
@@ -63,20 +59,21 @@ class OnboardingPage extends StatelessWidget {
                     Expanded(
                       child: Text.rich(
                         TextSpan(
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFFA1A1A6),
-                            height: 1.6,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: const Color(0xFFA1A1A6),
+                                height: 1.6,
+                              ),
                           children: const [
                             TextSpan(
-                              text: '一键降噪已就绪\n',
+                              text: '接下来这段时间属于你自己\n',
                               style: TextStyle(
                                 color: Color(0xFFE5E5EA),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             TextSpan(
-                              text: '接下来的流程，请确保自己处于独处环境，切断一切社交信息流。',
+                              text: '如果方便，可以先减少手机干扰。应用只会记录你的降噪偏好，不会替你屏蔽其他应用或系统通知。',
                             ),
                           ],
                         ),
@@ -110,7 +107,7 @@ class OnboardingPage extends StatelessWidget {
                   backgroundColor: const Color(0xFFE5E5EA),
                   foregroundColor: const Color(0xFF1C1C1E),
                 ),
-                onPressed: () => context.push(AppRoutes.restructureSetup),
+                onPressed: () => context.push(AppRoutes.restructureMorning),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

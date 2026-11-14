@@ -3,12 +3,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/bootstrap/presentation/bootstrap_page.dart';
 import '../../features/checkin/presentation/daily_checkin_page.dart';
+import '../../features/feedback/presentation/action_feedback_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/interrupt/presentation/daytime_interrupt_page.dart';
 import '../../features/insights/presentation/insights_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
 import '../../features/onboarding/presentation/vacuum_mode_page.dart';
 import '../../features/restructure/presentation/restructure_hub_page.dart';
+import '../../features/restructure/presentation/restructure_morning_page.dart';
 import '../../features/restructure/presentation/restructure_setup_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/sos/presentation/sos_page.dart';
@@ -39,11 +41,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             : AppRoutes.onboarding;
       }
 
+      // 首次重构未完成前，也允许进入晨间挖掘、晚间综合与日间观察，
+      // 这样"晨间 → 白天 → 晚间"能在同一次重构里连续发生。
       const unlockedBeforeSetup = {
         AppRoutes.onboarding,
         AppRoutes.vacuumMode,
         AppRoutes.vacuumFocus,
+        AppRoutes.restructureMorning,
         AppRoutes.restructureSetup,
+        AppRoutes.daytimeInterrupt,
       };
 
       if (!controller.hasCompletedInitialRestructure &&
@@ -77,10 +83,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const VacuumFocusPage(),
       ),
       GoRoute(
+        path: AppRoutes.restructureMorning,
+        builder: (context, state) => const RestructureMorningPage(),
+      ),
+      GoRoute(
         path: AppRoutes.restructureSetup,
         builder: (context, state) => RestructureSetupPage(
-          prefillFromLastAnswers:
-              state.uri.queryParameters['mode'] == 'edit',
+          prefillFromLastAnswers: state.uri.queryParameters['mode'] == 'edit',
         ),
       ),
       GoRoute(
@@ -89,7 +98,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.daytimeInterrupt,
-        builder: (context, state) => const DaytimeInterruptPage(),
+        builder: (context, state) => DaytimeInterruptPage(
+          initialPromptId: state.uri.queryParameters['prompt'],
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.actionFeedback,
+        builder: (context, state) => const ActionFeedbackPage(),
       ),
       GoRoute(
         path: AppRoutes.sos,
