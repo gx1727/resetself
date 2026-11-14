@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
+import '../../../core/widgets/draft_navigation_guard.dart';
+import '../../../core/widgets/draft_save_controller.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/morning_question.dart';
+import '../../../data/models/morning_archive.dart';
 
 /// 晨间「心理挖掘」：完整引导原文第一部分的问题。
 ///
@@ -26,7 +29,10 @@ class _RestructureMorningPageState
     for (final question in MorningQuestion.all)
       question.key: TextEditingController(),
   };
-  final Map<String, Timer> _saveTimers = {};
+  final _exitKey = GlobalKey<DraftNavigationGuardState>();
+  late final DraftSaveController<MorningDraftSnapshot> _saver;
+  Set<String> _reviewKeys = {};
+  bool _loadFailed = false;
 
   bool _isLoading = true;
   bool _isFinishing = false;
@@ -36,14 +42,22 @@ class _RestructureMorningPageState
   @override
   void initState() {
     super.initState();
+    final repository = ref.read(userProfileRepositoryProvider);
+    _saver = DraftSaveController(
+      write: (snapshot) => repository.saveMorningAnswers(
+        snapshot.answers,
+        reviewKeys: snapshot.reviewKeys,
+      ),
+      onChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
     unawaited(_loadSavedAnswers());
   }
 
   @override
   void dispose() {
-    for (final timer in _saveTimers.values) {
-      timer.cancel();
-    }
+    _saver.dispose();
     for (final controller in _controllers.values) {
       controller.dispose();
     }
@@ -55,7 +69,11 @@ class _RestructureMorningPageState
       final answers = await ref
           .read(userProfileRepositoryProvider)
           .getMorningAnswers();
+      final reviewKeys = await ref
+          .read(userProfileRepositoryProvider)
+          .getMorningReviewKeys();
 
+      if (!mounted) return;
       for (final entry in answers.entries) {
         final controller = _controllers[entry.key];
         if (controller != null) {
@@ -68,6 +86,9 @@ class _RestructureMorningPageState
       }
       setState(() {
         _isLoading = false;
+        _reviewKeys = reviewKeys;
+        _loadFailed = false;
+        _errorMessage = null;
         _answeredCount = _countAnswered();
       });
     } catch (error) {
@@ -76,7 +97,8 @@ class _RestructureMorningPageState
       }
       setState(() {
         _isLoading = false;
-        _errorMessage = '之前的晨间回答暂时没有取回成功，你仍然可以继续填写。';
+        _loadFailed = true;
+        _errorMessage = '晨间原稿读取失败。请重试取回，避免覆盖已有内容。';
       });
     }
   }
@@ -92,45 +114,18 @@ class _RestructureMorningPageState
       _answeredCount = _countAnswered();
     });
 
-    _saveTimers[key]?.cancel();
-    _saveTimers[key] = Timer(const Duration(milliseconds: 600), () {
-      unawaited(_persist(key));
-    });
+    _saveSnapshot();
   }
 
-  Future<void> _persist(String key) async {
-    final controller = _controllers[key];
-    if (controller == null) {
-      return;
-    }
-
-    try {
-      await ref
-          .read(userProfileRepositoryProvider)
-          .saveMorningAnswer(questionKey: key, answer: controller.text);
-      if (mounted && _errorMessage != null) {
-        setState(() {
-          _errorMessage = null;
-        });
-      }
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _errorMessage = '有一句回答没有保存成功，但内容还在页面里。';
-      });
-    }
+  void _saveSnapshot() {
+    _saver.update(
+      MorningDraftSnapshot({
+        for (final entry in _controllers.entries) entry.key: entry.value.text,
+      }, _reviewKeys),
+    );
   }
 
-  Future<void> _flushAll() async {
-    for (final question in MorningQuestion.all) {
-      _saveTimers[question.key]?.cancel();
-    }
-    for (final question in MorningQuestion.all) {
-      await _persist(question.key);
-    }
-  }
+  Future<bool> _flushAll() => _saver.flush();
 
   Future<void> _handleFinish() async {
     if (_isFinishing) {
@@ -141,7 +136,7 @@ class _RestructureMorningPageState
       _isFinishing = true;
     });
 
-    await _flushAll();
+    final saved = await _flushAll();
 
     if (!mounted) {
       return;
@@ -151,7 +146,7 @@ class _RestructureMorningPageState
       _isFinishing = false;
     });
 
-    await _showNextPhaseSheet();
+    if (saved) await _showNextPhaseSheet();
   }
 
   Future<void> _showNextPhaseSheet() async {
@@ -170,7 +165,7 @@ class _RestructureMorningPageState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  '晨间挖掘已经先保存在这里',
+                  '晨间探索原稿已保存',
                   style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF2D2D2D),
@@ -216,93 +211,106 @@ class _RestructureMorningPageState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(
-                      Icons.chevron_left_rounded,
-                      size: 28,
-                      color: Color(0xFF8E8E93),
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '已回答 $_answeredCount / ${MorningQuestion.all.length}',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: const Color(0xFF8E8E93),
-                    ),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: _isFinishing ? null : _handleFinish,
-                    child: const Text('稍后继续'),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: _isLoading
-                  ? Center(
-                      child: Text(
-                        '正在取回你上次的晨间思绪...',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF8E8E93),
-                        ),
+    return DraftNavigationGuard(
+      key: _exitKey,
+      save: _flushAll,
+      ready: !_isLoading && !_loadFailed,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF7F7F5),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => _exitKey.currentState?.leave(),
+                      icon: const Icon(
+                        Icons.chevron_left_rounded,
+                        size: 28,
+                        color: Color(0xFF8E8E93),
                       ),
-                    )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                      children: [
-                        _buildIntroCard(context),
-                        const SizedBox(height: 20),
-                        for (final question in MorningQuestion.all) ...[
-                          _buildQuestionCard(context, question),
-                          const SizedBox(height: 18),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '已回答 $_answeredCount / ${MorningQuestion.all.length}',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: const Color(0xFF8E8E93),
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: _isFinishing
+                          ? null
+                          : () => _exitKey.currentState?.leave(),
+                      child: const Text('稍后继续'),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _isLoading
+                    ? Center(
+                        child: Text(
+                          '正在取回你上次的晨间思绪...',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: const Color(0xFF8E8E93)),
+                        ),
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                        children: [
+                          _buildIntroCard(context),
+                          const SizedBox(height: 20),
+                          for (final question in MorningQuestion.all) ...[
+                            _buildQuestionCard(context, question),
+                            const SizedBox(height: 18),
+                          ],
                         ],
+                      ),
+              ),
+              if (_errorMessage != null || _saver.error != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    _errorMessage ?? '原稿未保存成功，内容仍在页面里，请重试。',
+                    style: const TextStyle(color: Color(0xFF8E8E93)),
+                  ),
+                ),
+              if (_loadFailed || _saver.error != null)
+                TextButton(
+                  onPressed: _loadFailed ? _loadSavedAnswers : _flushAll,
+                  child: const Text('重试'),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: FilledButton(
+                    onPressed: _isLoading || _loadFailed || _isFinishing
+                        ? null
+                        : _handleFinish,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(_isFinishing ? '正在保存...' : '完成晨间挖掘'),
+                        const SizedBox(width: 8),
+                        if (_isFinishing)
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          const Icon(Icons.arrow_forward_rounded, size: 18),
                       ],
                     ),
-            ),
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Color(0xFF8E8E93)),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: FilledButton(
-                  onPressed: _isLoading || _isFinishing ? null : _handleFinish,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(_isFinishing ? '正在保存...' : '完成晨间挖掘'),
-                      const SizedBox(width: 8),
-                      if (_isFinishing)
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      else
-                        const Icon(Icons.arrow_forward_rounded, size: 18),
-                    ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -336,6 +344,12 @@ class _RestructureMorningPageState
               height: 1.6,
             ),
           ),
+          const SizedBox(height: 8),
+          const Text('先写下你的解释。白天可以用实际发生的事情再核对它。'),
+          if (_saver.isDirty || _saver.isSaving) ...[
+            const SizedBox(height: 8),
+            Text(_saver.isSaving ? '正在保存原稿…' : '有待保存的改动'),
+          ],
         ],
       ),
     );
@@ -369,7 +383,25 @@ class _RestructureMorningPageState
           ],
         ),
         const SizedBox(height: 10),
+        FilterChip(
+          key: ValueKey('review-${question.key}'),
+          label: const Text('待回看'),
+          selected: _reviewKeys.contains(question.key),
+          onSelected: _loadFailed || _isFinishing
+              ? null
+              : (selected) {
+                  setState(() {
+                    if (selected) {
+                      _reviewKeys.add(question.key);
+                    } else {
+                      _reviewKeys.remove(question.key);
+                    }
+                  });
+                  _saveSnapshot();
+                },
+        ),
         TextField(
+          enabled: !_loadFailed && !_isFinishing,
           controller: _controllers[question.key],
           maxLines: 5,
           minLines: 3,

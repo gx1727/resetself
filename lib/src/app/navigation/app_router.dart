@@ -19,9 +19,11 @@ import '../state/app_controller.dart';
 import 'app_routes.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final controller = ref.watch(appControllerProvider);
+  // Observe the controller instance, not every ChangeNotifier notification.
+  // refreshListenable updates redirects without recreating the route stack.
+  final controller = ref.watch(appControllerProvider.notifier);
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: AppRoutes.bootstrap,
     refreshListenable: controller,
     redirect: (context, state) {
@@ -31,7 +33,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return location == AppRoutes.bootstrap ? null : AppRoutes.bootstrap;
       }
 
-      if (controller.errorMessage != null) {
+      if (controller.hasInitializationError) {
         return location == AppRoutes.bootstrap ? null : AppRoutes.bootstrap;
       }
 
@@ -50,6 +52,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         AppRoutes.restructureMorning,
         AppRoutes.restructureSetup,
         AppRoutes.daytimeInterrupt,
+        AppRoutes.restructureHub,
+        AppRoutes.actionFeedback,
       };
 
       if (!controller.hasCompletedInitialRestructure &&
@@ -128,4 +132,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  ref.onDispose(router.dispose);
+  return router;
 });

@@ -8,12 +8,9 @@ import '../../../data/database/database_providers.dart';
 import '../../../data/models/inertia_sample.dart';
 import '../../home/application/home_providers.dart';
 import '../../vacuum/application/vacuum_mode_providers.dart';
+import '../../restructure/presentation/exploration_review_sheet.dart';
 
-/// 日间打断：把理论里"白天多次、每次 3 分钟自省"落成应用内页面。
-///
-/// 固定六个示例时点 + 三条追加追问，每个问题来自原版理论的追问，
-/// 用户写下觉察并归类为「成长性行为 / 逃避性行为」，
-/// 最终沉淀为 `daytime_interrupt` 惯性样本。
+/// 原文六个示例时点及三条追加追问；标签是可选的产品整理方式。
 class DaytimeInterruptPage extends ConsumerStatefulWidget {
   const DaytimeInterruptPage({super.key, this.initialPromptId});
 
@@ -33,6 +30,21 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
   String? _errorMessage;
   String? _savedPromptId;
   String _reflectionText = '';
+  final Map<int, String> _drafts = {};
+  final Map<int, String?> _tags = {};
+
+  void _selectPrompt(int index, int currentIndex) {
+    if (_isSaving) return;
+    _drafts[currentIndex] = _controller.text;
+    _tags[currentIndex] = _selectedTag;
+    _controller.text = _drafts[index] ?? '';
+    setState(() {
+      _selectedIndex = index;
+      _selectedTag = _tags[index];
+      _reflectionText = _controller.text;
+      _errorMessage = null;
+    });
+  }
 
   @override
   void initState() {
@@ -63,12 +75,9 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
     final content = _controller.text.trim();
     final tag = _selectedTag;
 
-    // 空回答不计入自省次数，未选择归类时不替用户默认归类。
-    if (content.isEmpty || tag == null) {
+    if (content.isEmpty) {
       setState(() {
-        _errorMessage = content.isEmpty
-            ? copy.emptyContentHint
-            : copy.missingTagHint;
+        _errorMessage = copy.emptyContentHint;
       });
       return;
     }
@@ -83,7 +92,9 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
           .read(userProfileRepositoryProvider)
           .saveDaytimeInterruptReflection(
             content: content,
-            statusTag: tag,
+            statusTag: tag ?? '未归类',
+            promptId: prompt.id,
+            promptSnapshot: prompt.question,
           );
       invalidateHomeSurface(ref);
       if (!mounted) {
@@ -92,6 +103,8 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
 
       _controller.clear();
       setState(() {
+        _drafts.remove(_selectedIndex);
+        _tags.remove(_selectedIndex);
         _savedPromptId = prompt.id;
         _selectedTag = null;
         _reflectionText = '';
@@ -212,79 +225,80 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      if (!interruptEnabled)
-                        _InterruptDisabledCard(copy: copy)
-                      else ...[
-                        Text(
-                          copy.promptEyebrow,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                color: const Color(0xFF8E8E93),
-                                letterSpacing: 1.2,
+                      if (!interruptEnabled) _InterruptDisabledCard(copy: copy),
+                      ...[
+                        const Text('原文示例时点，可按日程调整；也可以随时手动记录。'),
+                        ExpansionTile(
+                          title: const Text('选择／切换观察问题'),
+                          children: [
+                            Text(
+                              copy.promptEyebrow,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: const Color(0xFF8E8E93),
+                                    letterSpacing: 1.2,
+                                  ),
+                            ),
+                            const SizedBox(height: 12),
+                            for (var i = 0; i < copy.prompts.length; i++) ...[
+                              _InterruptPromptTile(
+                                prompt: copy.prompts[i],
+                                time: promptTimes[i],
+                                isSelected: i == selectedIndex,
+                                isSaved: _savedPromptId == copy.prompts[i].id,
+                                onTap: () => _selectPrompt(i, selectedIndex),
                               ),
-                        ),
-                        const SizedBox(height: 12),
-                        for (var i = 0; i < copy.prompts.length; i++) ...[
-                          _InterruptPromptTile(
-                            prompt: copy.prompts[i],
-                            time: promptTimes[i],
-                            isSelected: i == selectedIndex,
-                            isSaved: _savedPromptId == copy.prompts[i].id,
-                            onTap: () {
-                              _controller.clear();
-                              setState(() {
-                                _selectedIndex = i;
-                                _selectedTag = null;
-                                _savedPromptId = null;
-                                _errorMessage = null;
-                                _reflectionText = '';
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        const SizedBox(height: 12),
-                        Text(
-                          copy.followUpEyebrow,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                color: const Color(0xFF8E8E93),
-                                letterSpacing: 1.2,
+                              const SizedBox(height: 10),
+                            ],
+                            const SizedBox(height: 12),
+                            Text(
+                              copy.followUpEyebrow,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: const Color(0xFF8E8E93),
+                                    letterSpacing: 1.2,
+                                  ),
+                            ),
+                            const SizedBox(height: 12),
+                            for (
+                              var i = 0;
+                              i < copy.followUpPrompts.length;
+                              i++
+                            ) ...[
+                              _InterruptPromptTile(
+                                prompt: copy.followUpPrompts[i],
+                                isSelected:
+                                    followUpStartIndex + i == selectedIndex,
+                                isSaved:
+                                    _savedPromptId ==
+                                    copy.followUpPrompts[i].id,
+                                onTap: () => _selectPrompt(
+                                  followUpStartIndex + i,
+                                  selectedIndex,
+                                ),
                               ),
+                              const SizedBox(height: 10),
+                            ],
+                            const SizedBox(height: 8),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        for (
-                          var i = 0;
-                          i < copy.followUpPrompts.length;
-                          i++
-                        ) ...[
-                          _InterruptPromptTile(
-                            prompt: copy.followUpPrompts[i],
-                            isSelected: followUpStartIndex + i == selectedIndex,
-                            isSaved:
-                                _savedPromptId == copy.followUpPrompts[i].id,
-                            onTap: () {
-                              _controller.clear();
-                              setState(() {
-                                _selectedIndex = followUpStartIndex + i;
-                                _selectedTag = null;
-                                _savedPromptId = null;
-                                _errorMessage = null;
-                                _reflectionText = '';
-                              });
-                            },
+                        Text(
+                          selectedPrompt.question,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        TextButton(
+                          onPressed: () => showExplorationReview(
+                            context,
+                            includeObservations: false,
                           ),
-                          const SizedBox(height: 10),
-                        ],
-                        const SizedBox(height: 8),
+                          child: const Text('回看晨间原稿'),
+                        ),
                         _InterruptReflectionForm(
                           copy: copy,
                           controller: _controller,
                           selectedTag: _selectedTag,
                           isSaving: _isSaving,
-                          canSave:
-                              _reflectionText.trim().isNotEmpty &&
-                              _selectedTag != null,
+                          canSave: _reflectionText.trim().isNotEmpty,
                           errorMessage: _errorMessage,
                           onChangedText: (value) {
                             setState(() {
@@ -292,8 +306,9 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
                             });
                           },
                           onSelectTag: (tag) {
+                            if (_isSaving) return;
                             setState(() {
-                              _selectedTag = tag;
+                              _selectedTag = _selectedTag == tag ? null : tag;
                             });
                           },
                           onSave: () => _handleSave(selectedPrompt),
@@ -308,7 +323,15 @@ class _DaytimeInterruptPageState extends ConsumerState<DaytimeInterruptPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      if (reflections.isEmpty)
+                      if (reflectionsAsync.hasError)
+                        TextButton(
+                          onPressed: () =>
+                              ref.invalidate(todayInterruptReflectionsProvider),
+                          child: const Text('观察记录读取失败，点此重试'),
+                        )
+                      else if (reflectionsAsync.isLoading)
+                        const Text('正在读取观察记录…')
+                      else if (reflections.isEmpty)
                         Text(
                           copy.historyEmpty,
                           style: Theme.of(context).textTheme.bodyMedium
@@ -448,6 +471,7 @@ class _InterruptReflectionForm extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           TextField(
+            enabled: !isSaving,
             controller: controller,
             minLines: 3,
             maxLines: 5,
@@ -466,7 +490,7 @@ class _InterruptReflectionForm extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            copy.tagLabel,
+            '${copy.tagLabel}（可选，可暂时不归类）',
             style: Theme.of(
               context,
             ).textTheme.labelMedium?.copyWith(color: const Color(0xFF8E8E93)),
@@ -597,6 +621,11 @@ class _InterruptHistoryTile extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
+            sample.promptSnapshot ?? '未记录问题',
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
             sample.content,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: const Color(0xFF5B5B5B),
@@ -636,7 +665,7 @@ class _InterruptDisabledCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            copy.disabledBody,
+            '日间通知已关闭。你仍可以手动查看问题、回看原稿并记录观察。',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: const Color(0xFF8E8E93),
               height: 1.6,
@@ -675,7 +704,5 @@ int _minutesOfDay(String time) {
 }
 
 String _formatInterruptTime(DateTime value) {
-  final hour = value.hour.toString().padLeft(2, '0');
-  final minute = value.minute.toString().padLeft(2, '0');
-  return '$hour:$minute';
+  return formatObservationTime(value);
 }

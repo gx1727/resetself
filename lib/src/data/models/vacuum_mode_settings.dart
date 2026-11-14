@@ -15,15 +15,14 @@ class VacuumModeSettings {
   final String reminderTime;
   final String focusRhythmLabel;
 
-  /// 是否启用"日间打断"（每小时一次的 3 分钟自省）。
+  /// 是否安排日间观察通知；不影响手动练习。
   final bool interruptEnabled;
 
   /// 六个打断时点，逗号分隔，例如 `11:00,13:30,15:15,17:00,19:30,21:00`。
   final String interruptTimes;
 
-  /// 理论原版约定的六个打断时点。
-  static const defaultInterruptTimes =
-      '11:00,13:30,15:15,17:00,19:30,21:00';
+  /// 原文提供的六个示例时点，可按日程调整。
+  static const defaultInterruptTimes = '11:00,13:30,15:15,17:00,19:30,21:00';
 
   List<String> get interruptTimeList {
     return interruptTimes
@@ -68,11 +67,9 @@ class VacuumModeSettings {
     return VacuumModeSettings(
       focusWindowMinutes: map['focus_window_minutes'] as int? ?? 90,
       noiseCutEnabled: (map['noise_cut_enabled'] as int? ?? 1) == 1,
-      gentleReminderEnabled:
-          (map['gentle_reminder_enabled'] as int? ?? 1) == 1,
+      gentleReminderEnabled: (map['gentle_reminder_enabled'] as int? ?? 1) == 1,
       reminderTime: map['reminder_time'] as String? ?? '21:30',
-      focusRhythmLabel:
-          map['focus_rhythm_label'] as String? ?? '每晚一次温和提醒',
+      focusRhythmLabel: map['focus_rhythm_label'] as String? ?? '每晚一次温和提醒',
       interruptEnabled: (map['interrupt_enabled'] as int? ?? 1) == 1,
       interruptTimes:
           map['interrupt_times'] as String? ?? defaultInterruptTimes,

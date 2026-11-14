@@ -10,7 +10,7 @@ import java.util.Calendar
 /**
  * 用 AlarmManager 排每日提醒。
  *
- * 优先用 setExactAndAllowWhileIdle 保证到点准时；
+ * 优先用 setExactAndAllowWhileIdle 安排指定时点；送达仍受系统限制；
  * 若系统未授予精确闹钟权限，则退回 setAndAllowWhileIdle（可能被系统延后几分钟）。
  */
 object ReminderScheduler {

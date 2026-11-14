@@ -101,7 +101,7 @@ class CopyStrategy {
     return const InsightsCopy(
       pageTitle: '惯性样本库',
       loadingHint: '样本库正在慢慢浮现...',
-      errorHint: '样本库暂时没有展开，但你的本地数据仍是安全的。',
+      errorHint: '样本读取失败，请重试。',
       defaultStatusSos: 'SOS急救',
       defaultStatusManual: '首次重构',
       defaultStatusVacuumFocus: '真空专注',
@@ -226,13 +226,13 @@ class CopyStrategy {
     return const DaytimeInterruptCopy(
       title: '日间打断',
       subtitle: '在白天，用几次短暂停顿看清：\n此刻的行为，更靠近你想成为的样子，还是更靠近旧有的模式？',
-      recordedTemplate: '今天已完成 {count} 次自省',
+      recordedTemplate: '今天已记录 {count} 次自省',
       pendingLabel: '还没到下一个打断时点',
       promptEyebrow: '此刻的自省问题',
       followUpEyebrow: '随时可用的追加追问',
       reflectionLabel: '写下你此刻的觉察',
-      reflectionHint: '不用写多，两三句就够。',
-      tagLabel: '把这次行为先粗略归类（留给初步整理，不覆盖全部情况）',
+      reflectionHint: '刚才发生了什么？你做了什么？它可能在满足或保护什么？也可以写“暂时不知道”。',
+      tagLabel: '可选：把这次行为先粗略归类，不覆盖全部情况',
       growthTag: '成长性行为',
       escapeTag: '逃避性行为',
       otherTag: '其他／待核对',
@@ -241,8 +241,8 @@ class CopyStrategy {
       savedBody: '它不是评判，而是一条帮你看清模式出现时段的记录。',
       emptyContentHint: '先写下一点觉察，再记录这次自省。',
       missingTagHint: '先选一个归类，或者选择“其他／待核对”。',
-      disabledTitle: '日间打断还没有开启',
-      disabledBody: '可以在认知真空准备区打开"日间打断"，让这些时点提醒你停下来。',
+      disabledTitle: '日间提醒已关闭',
+      disabledBody: '你仍可手动选择问题和记录观察。需要通知时，可在准备区开启提醒。',
       historyTitle: '今天留下的自省',
       historyEmpty: '今天还没有留下自省记录。',
       prompts: [
@@ -306,17 +306,17 @@ class CopyStrategy {
 
   static ActionFeedbackCopy actionFeedback() {
     return const ActionFeedbackCopy(
-      title: '行动反馈闭环',
-      subtitle: '把一次行动完整走一遍：\n尝试 → 发生 → 认识 → 调整。',
+      title: '行动反馈',
+      subtitle: '回看一次行动，比较期望与实际，再决定下一次怎样尝试。可以先记录一部分。',
       attemptedLabel: '1. 尝试了什么',
-      attemptedHint: '这一次你实际做了什么动作、实验或安排？',
+      attemptedHint: '这次想推进什么？做了哪一步？原本希望发生什么？',
       happenedLabel: '2. 发生了什么',
-      happenedHint: '执行之后，你实际观察到的结果是什么？',
+      happenedHint: '实际发生了什么？相对于原先期望，有什么差距或意外？',
       insightLabel: '3. 得到什么认识',
-      insightHint: '从结果里，你读到了什么？',
+      insightHint: '哪些解释得到支持，哪些需要重看？行动方式和现实条件有什么影响？',
       adjustmentLabel: '4. 下一次调整什么',
-      adjustmentHint: '下一次你准备改变哪个行动、环境或方法？',
-      saveLabel: '保存这次反馈',
+      adjustmentHint: '下次准备保留或改变什么？可以调整行动、环境、项目，也可以重新考虑方向。',
+      saveLabel: '保存记录',
       savedTitle: '这次反馈已经记下来了',
       savedBody: '它不是评分，而是下一次调整方法的依据。',
       emptyHint: '先写下一点内容，把这次尝试记下来。',
@@ -340,7 +340,7 @@ class CopyLexicon {
   }
 
   static String returnSignalPhrase({required bool strong}) {
-    return strong ? '你已经开始主动把自己带回来了' : '这一周已经出现第一批回流信号';
+    return strong ? '已有多条可以回看的记录' : '已有可以回看的记录';
   }
 
   static String anchorPhrase() {
@@ -835,11 +835,11 @@ class NeutralCopyEngine {
     }
 
     if (vacuumFocusCount >= 3 && matchCount >= fullDeviationCount) {
-      return '这一周已经开始形成稳定回流';
+      return '这一周已有多次专注记录';
     }
 
     if (matchCount >= partialCount + fullDeviationCount) {
-      return '这一周的新身份正在慢慢站稳';
+      return '这一周主观匹配的记录更多一些';
     }
 
     if (fullDeviationCount > partialCount) {
@@ -854,18 +854,18 @@ class NeutralCopyEngine {
     required int matchCount,
   }) {
     if (vacuumFocusCount == 0 && matchCount == 0) {
-      return '正向回流还在积累中';
+      return '尚无专注或主观匹配记录';
     }
 
     if (vacuumFocusCount >= 3) {
-      return returnSignalPhrase(strong: true);
+      return '本周已有多次专注完成记录';
     }
 
     if (matchCount >= 2) {
-      return '新的身份匹配开始有连续性了';
+      return '本周已有多次主观完全匹配记录';
     }
 
-    return returnSignalPhrase(strong: false);
+    return '回看本周专注与主观匹配记录';
   }
 
   static String insightDominantLabel({
@@ -899,18 +899,18 @@ class NeutralCopyEngine {
     required String checkinStability,
   }) {
     if (sampleCount == 0) {
-      return '这一年还处在起步阶段，系统正在等待更多真实记录。';
+      return '这一年尚无相应样本记录，可结合实际经历回看。';
     }
 
     if (checkinStability.contains('稳定回流')) {
-      return '稳定开始变多，新的轨道正在被反复印证。';
+      return '这一年有多次主观完全匹配记录，可核对哪些行动支持了你的方向。';
     }
 
     if (checkinStability.contains('明显偏离')) {
-      return '即使偏离较多，这一年也已经留下了足够多可复盘的证据。';
+      return '这一年有偏离记录，可以回看当时的行动与现实条件。';
     }
 
-    return '这一年最重要的变化，不是完美，而是你开始${archiveEvidencePhrase()}';
+    return '这一年保存了 $sampleCount 条样本，记录数量本身不代表身份已经改变。';
   }
 
   static HomeSuggestionCopy homeFocusActive(String remainingText) {
@@ -965,9 +965,9 @@ class NeutralCopyEngine {
 
   static HomeSuggestionCopy homeMatch(String minAction) {
     return HomeSuggestionCopy(
-      title: '保持今天这条新轨道',
-      body: '今天已经完成一次完全匹配，不需要再额外加码。${smallestActionPhrase(minAction)}',
-      actionLabel: '看本周回流',
+      title: '回看今天的行动',
+      body: '今天记录了一次主观完全匹配。哪些实际行动支持了你的方向？${smallestActionPhrase(minAction)}',
+      actionLabel: '看本周记录',
     );
   }
 
@@ -1006,7 +1006,7 @@ class NeutralCopyEngine {
       'daily_deviation' => '这里聚焦每天的日常拉扯。先看清最常发生的偏离，再决定要把动作缩到哪里。',
       'sos' => '这里是状态波动最明显的时刻。先记下来，再慢慢回到今天这一小步。',
       'restructure' => '这里保存身份重构留下的锚点。${anchorPhrase()}',
-      'vacuum_focus' => '这里记录你主动把自己带回来的证据。每一段完成的真空专注，都是回流正在发生。',
+      'vacuum_focus' => '这里保存完成的专注记录。回看实际行动，看看这些时间对当前项目有什么作用。',
       _ => '这里记录了最近 7 天的状态样本。',
     };
   }
@@ -1039,7 +1039,7 @@ class NeutralCopyEngine {
       'vacuum_focus' => FilterContextCopy(
         eyebrow: '当前筛选：真空专注',
         title: '先看你是怎么把自己带回来的',
-        body: '最近 7 天已完成真空专注 $focusCount 次。这里呈现的不是拉扯本身，而是你主动回流、重新站稳的证据。',
+        body: '最近 7 天记录了 $focusCount 次已完成的专注。可以结合实际行动，回看它们是否推进了当前项目。',
       ),
       _ => const FilterContextCopy(
         eyebrow: '当前筛选：全部样本',

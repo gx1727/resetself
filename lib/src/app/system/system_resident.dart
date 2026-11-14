@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../../core/copy/neutral_copy_engine.dart';
 import '../../data/models/vacuum_mode_settings.dart';
 
-/// 系统层"后台常驻 + 准时提醒"的状态快照。
+/// 系统层后台服务与提醒排程的状态快照。
 class SystemResidentStatus {
   const SystemResidentStatus({
     required this.notificationsEnabled,
@@ -193,7 +193,7 @@ class SystemResident {
           'hour': parsed.$1,
           'minute': parsed.$2,
           'title': '日间打断 · $time',
-          'body': prompt?.question ?? '用 3 分钟看清：此刻的行为，更靠近你想成为的样子，还是更靠近旧有的模式。',
+          'body': prompt?.question ?? '花片刻回看刚才的行为：发生了什么，它可能在服务什么？',
           'promptId': prompt?.id ?? '',
         });
       }

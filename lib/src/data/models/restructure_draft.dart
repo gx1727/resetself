@@ -12,6 +12,8 @@ class RestructureDraft {
     this.constraints = '',
     this.valueConstraints = '',
     this.updatedAt,
+    this.currentStepId = 'anti',
+    this.changeReason = '',
   });
 
   final String antiVision;
@@ -46,6 +48,8 @@ class RestructureDraft {
   final String valueConstraints;
 
   final DateTime? updatedAt;
+  final String currentStepId;
+  final String changeReason;
 
   static RestructureDraft empty() {
     return const RestructureDraft(
@@ -98,6 +102,8 @@ class RestructureDraft {
     String? constraints,
     String? valueConstraints,
     DateTime? updatedAt,
+    String? currentStepId,
+    String? changeReason,
   }) {
     return RestructureDraft(
       antiVision: antiVision ?? this.antiVision,
@@ -112,6 +118,8 @@ class RestructureDraft {
       constraints: constraints ?? this.constraints,
       valueConstraints: valueConstraints ?? this.valueConstraints,
       updatedAt: updatedAt ?? this.updatedAt,
+      currentStepId: currentStepId ?? this.currentStepId,
+      changeReason: changeReason ?? this.changeReason,
     );
   }
 
@@ -129,6 +137,8 @@ class RestructureDraft {
       constraints: map['constraints'] as String? ?? '',
       valueConstraints: map['value_constraints'] as String? ?? '',
       updatedAt: _parseTimestamp(map['updated_at']),
+      currentStepId: map['current_step_id'] as String? ?? 'anti',
+      changeReason: map['change_reason'] as String? ?? '',
     );
   }
 
@@ -147,6 +157,8 @@ class RestructureDraft {
       'constraints': constraints.trim(),
       'value_constraints': valueConstraints.trim(),
       'updated_at': DateTime.now().toIso8601String(),
+      'current_step_id': currentStepId,
+      'change_reason': changeReason.trim(),
     };
   }
 

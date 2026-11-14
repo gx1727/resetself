@@ -2,8 +2,11 @@ import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
+  AppDatabase({this.pathOverride});
+
+  final String? pathOverride;
   static const dbName = 'resetself_v1.db';
-  static const dbVersion = 11;
+  static const dbVersion = 13;
 
   Database? _database;
   Future<Database>? _databaseFuture;
@@ -23,6 +26,7 @@ class AppDatabase {
   }
 
   Future<String> get databasePath async {
+    if (pathOverride != null) return pathOverride!;
     final existing = _databasePath;
     if (existing != null) {
       return existing;
@@ -171,6 +175,8 @@ class AppDatabase {
     await _createIdentityAnchorTable(db);
     await _createMorningAnswerTable(db);
     await _createActionFeedbackTable(db);
+    await _addExplorationContext(db);
+    await _addExplorationHistory(db);
   }
 
   Future<void> _migrateSchema(
@@ -227,6 +233,85 @@ class AppDatabase {
       // 尝试了什么 → 发生了什么 → 得到什么认识 → 下一次调整什么。
       await _createActionFeedbackTable(db);
     }
+    if (oldVersion < 12 && newVersion >= 12) {
+      await _addExplorationContext(db);
+    }
+    if (oldVersion < 13 && newVersion >= 13) {
+      await _addExplorationHistory(db);
+    }
+  }
+
+  Future<void> _addExplorationHistory(DatabaseExecutor db) async {
+    await _addColumnIfMissing(
+      db,
+      table: 'exploration_state',
+      column: 'review_question_keys',
+      definition: "TEXT NOT NULL DEFAULT '[]'",
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_draft',
+      column: 'current_step_id',
+      definition: "TEXT NOT NULL DEFAULT 'anti'",
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_draft',
+      column: 'change_reason',
+      definition: "TEXT NOT NULL DEFAULT ''",
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'restructure_record',
+      column: 'change_reason',
+      definition: 'TEXT',
+    );
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS morning_archive (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        started_at TEXT,
+        archived_at TEXT NOT NULL,
+        answers_json TEXT NOT NULL,
+        review_keys_json TEXT NOT NULL DEFAULT '[]'
+      );
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS action_change (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        previous_action TEXT NOT NULL,
+        new_action TEXT NOT NULL,
+        reason TEXT,
+        created_at TEXT NOT NULL
+      );
+    ''');
+  }
+
+  /// Optional context only; old records retain their original meaning.
+  Future<void> _addExplorationContext(DatabaseExecutor db) async {
+    await _addColumnIfMissing(
+      db,
+      table: 'inertia_sample',
+      column: 'prompt_id',
+      definition: 'TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'inertia_sample',
+      column: 'prompt_snapshot',
+      definition: 'TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table: 'action_feedback',
+      column: 'direction_snapshot',
+      definition: 'TEXT',
+    );
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS exploration_state (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        started_at TEXT NOT NULL
+      );
+    ''');
   }
 
   /// v10：为重构草稿与重构记录补充「每日杠杆」字段。

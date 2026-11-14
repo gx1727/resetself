@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/navigation/app_routes.dart';
+import '../../../app/state/app_controller.dart';
 import '../../../core/copy/neutral_copy_engine.dart';
+import '../../../core/widgets/direction_summary.dart';
+import '../../../core/widgets/min_action_editor.dart';
 import '../../../core/widgets/app_page_scaffold.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/action_feedback.dart';
 import '../application/action_feedback_providers.dart';
+import '../../home/application/home_providers.dart';
 
-/// 行动反馈闭环：把原文建议的记录模板落成可填写的页面。
+/// 行动反馈：用产品记录模板支持原文 V 的反馈循环。
 ///
 /// 模板：「尝试了什么 → 发生了什么 → 得到什么认识 → 下一次调整什么」。
 /// 页面只负责记录与回看，不生成分数或与他人比较。
@@ -27,6 +33,9 @@ class _ActionFeedbackPageState extends ConsumerState<ActionFeedbackPage> {
   bool _isSaving = false;
   bool _justSaved = false;
   String? _errorMessage;
+  String? _referenceSnapshot;
+  bool _referenceCaptured = false;
+  String _lastAdjustment = '';
 
   @override
   void dispose() {
@@ -70,6 +79,7 @@ class _ActionFeedbackPageState extends ConsumerState<ActionFeedbackPage> {
             happened: _happenedController.text,
             insight: _insightController.text,
             adjustment: _adjustmentController.text,
+            directionSnapshot: _referenceSnapshot,
           );
 
       ref.invalidate(recentActionFeedbacksProvider);
@@ -79,12 +89,15 @@ class _ActionFeedbackPageState extends ConsumerState<ActionFeedbackPage> {
         return;
       }
 
+      _lastAdjustment = _adjustmentController.text.trim();
       _attemptedController.clear();
       _happenedController.clear();
       _insightController.clear();
       _adjustmentController.clear();
       setState(() {
         _justSaved = true;
+        _referenceCaptured = false;
+        _referenceSnapshot = null;
       });
     } catch (error) {
       if (!mounted) {
@@ -103,12 +116,23 @@ class _ActionFeedbackPageState extends ConsumerState<ActionFeedbackPage> {
   }
 
   void _handleFieldChanged(String _) {
-    if (_justSaved || _errorMessage != null) {
-      setState(() {
-        _justSaved = false;
-        _errorMessage = null;
-      });
-    }
+    setState(() {
+      if (!_referenceCaptured && _hasAnyInput) {
+        final record = ref.read(latestRestructureRecordProvider).valueOrNull;
+        _referenceSnapshot = record == null
+            ? null
+            : directionSnapshot(
+                record,
+                minAction: ref
+                    .read(appControllerProvider)
+                    .profile
+                    .todayMinAction,
+              );
+        _referenceCaptured = true;
+      }
+      _justSaved = false;
+      _errorMessage = null;
+    });
   }
 
   @override
@@ -116,6 +140,7 @@ class _ActionFeedbackPageState extends ConsumerState<ActionFeedbackPage> {
     final copy = CopyStrategy.actionFeedback();
     final feedbackAsync = ref.watch(recentActionFeedbacksProvider);
     final records = feedbackAsync.valueOrNull ?? const <ActionFeedback>[];
+    final directionAsync = ref.watch(latestRestructureRecordProvider);
 
     return AppPageScaffold(
       title: copy.title,
@@ -123,6 +148,28 @@ class _ActionFeedbackPageState extends ConsumerState<ActionFeedbackPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (_referenceCaptured)
+            ExpansionTile(
+              title: const Text('这次记录参考的方向'),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    _referenceSnapshot ?? '开始记录时没有可用方向。仍可保存自己的尝试与观察。',
+                  ),
+                ),
+              ],
+            )
+          else if (directionAsync.valueOrNull != null)
+            DirectionSummary(record: directionAsync.valueOrNull!, title: '当前方向')
+          else if (directionAsync.hasError)
+            TextButton(
+              onPressed: () => ref.invalidate(latestRestructureRecordProvider),
+              child: const Text('方向读取失败，点此重试；仍可记录反馈'),
+            )
+          else
+            const Text('可以先记录尝试与观察，方向也可以稍后建立。'),
+          const SizedBox(height: 12),
           _FeedbackFormCard(
             copy: copy,
             attemptedController: _attemptedController,
@@ -136,6 +183,26 @@ class _ActionFeedbackPageState extends ConsumerState<ActionFeedbackPage> {
             onChanged: _handleFieldChanged,
             onSave: _handleSave,
           ),
+          if (_justSaved) ...[
+            if (_lastAdjustment.isNotEmpty) Text('下一次调整：$_lastAdjustment'),
+            Wrap(
+              spacing: 8,
+              children: [
+                TextButton(
+                  onPressed: () => context.go(AppRoutes.home),
+                  child: const Text('回到首页／修改最小行动'),
+                ),
+                TextButton(
+                  onPressed: () => context.push(AppRoutes.restructureHub),
+                  child: const Text('查看／修改方向'),
+                ),
+                TextButton(
+                  onPressed: () => showMinActionEditor(context),
+                  child: const Text('修改最小启动行动'),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 24),
           Text(
             copy.historyTitle,
@@ -145,7 +212,14 @@ class _ActionFeedbackPageState extends ConsumerState<ActionFeedbackPage> {
             ),
           ),
           const SizedBox(height: 12),
-          if (records.isEmpty)
+          if (feedbackAsync.hasError)
+            TextButton(
+              onPressed: () => ref.invalidate(recentActionFeedbacksProvider),
+              child: const Text('反馈记录读取失败，点此重试'),
+            )
+          else if (feedbackAsync.isLoading)
+            const Text('正在读取反馈记录…')
+          else if (records.isEmpty)
             Text(
               copy.historyEmpty,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -209,6 +283,7 @@ class _FeedbackFormCard extends StatelessWidget {
             hint: copy.attemptedHint,
             controller: attemptedController,
             onChanged: onChanged,
+            enabled: !isSaving,
           ),
           const SizedBox(height: 16),
           _FeedbackField(
@@ -216,6 +291,7 @@ class _FeedbackFormCard extends StatelessWidget {
             hint: copy.happenedHint,
             controller: happenedController,
             onChanged: onChanged,
+            enabled: !isSaving,
           ),
           const SizedBox(height: 16),
           _FeedbackField(
@@ -223,6 +299,7 @@ class _FeedbackFormCard extends StatelessWidget {
             hint: copy.insightHint,
             controller: insightController,
             onChanged: onChanged,
+            enabled: !isSaving,
           ),
           const SizedBox(height: 16),
           _FeedbackField(
@@ -230,6 +307,7 @@ class _FeedbackFormCard extends StatelessWidget {
             hint: copy.adjustmentHint,
             controller: adjustmentController,
             onChanged: onChanged,
+            enabled: !isSaving,
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -279,12 +357,14 @@ class _FeedbackField extends StatelessWidget {
     required this.hint,
     required this.controller,
     required this.onChanged,
+    required this.enabled,
   });
 
   final String label;
   final String hint;
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -299,6 +379,7 @@ class _FeedbackField extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextField(
+          enabled: enabled,
           controller: controller,
           minLines: 2,
           maxLines: 4,
@@ -390,8 +471,20 @@ class _FeedbackRecordCard extends StatelessWidget {
               context,
             ).textTheme.bodySmall?.copyWith(color: const Color(0xFF8E8E93)),
           ),
+          ExpansionTile(
+            title: const Text('记录时参考的方向'),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(record.directionSnapshot ?? '这条记录未保存方向上下文。'),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
-          _FeedbackRecordRow(label: copy.attemptedLabel, value: record.attempted),
+          _FeedbackRecordRow(
+            label: copy.attemptedLabel,
+            value: record.attempted,
+          ),
           const SizedBox(height: 8),
           _FeedbackRecordRow(label: copy.happenedLabel, value: record.happened),
           const SizedBox(height: 8),

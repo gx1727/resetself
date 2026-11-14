@@ -36,7 +36,7 @@ class WeeklyReviewSummary {
     }
 
     final buffer = StringBuffer();
-    buffer.write('完全匹配 $matchCount 次');
+    buffer.write('主观完全匹配 $matchCount 次');
     buffer.write('，部分偏离 $partialCount 次');
     buffer.write('，完全偏离 $fullDeviationCount 次');
     if (sosCount > 0) {
@@ -58,17 +58,17 @@ class WeeklyReviewSummary {
 
   String get positiveSignalBody {
     if (vacuumFocusCount == 0 && matchCount == 0) {
-      return '先完成一次专注，或记录一次完全匹配，系统就会开始显影正向变化。';
+      return '这段时间没有专注完成或主观完全匹配记录，可结合实际经历回顾。';
     }
 
     if (vacuumFocusCount >= 3) {
-      return '最近 7 天你已经完成 $vacuumFocusCount 次真空专注，这说明你不只是看见偏离，也开始主动回到轨道。';
+      return '最近 7 天记录了 $vacuumFocusCount 次已完成的专注。回看这些时间实际推进了什么。';
     }
 
     if (matchCount >= 2) {
-      return '最近 7 天已有 $matchCount 次完全匹配，说明新的身份并不是偶发出现。';
+      return '最近 7 天记录了 $matchCount 次主观完全匹配，可结合实际行动回顾。';
     }
 
-    return '最近 7 天你已经留下了第一批可见的回流证据，继续把它们做小、做稳。';
+    return '最近 7 天已有专注或主观匹配记录，可结合实际行动回顾。';
   }
 }

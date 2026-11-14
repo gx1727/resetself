@@ -23,12 +23,12 @@ enum SampleFilter {
   final String label;
 
   String get queryValue => switch (this) {
-        SampleFilter.all => 'all',
-        SampleFilter.dailyDeviation => 'daily_deviation',
-        SampleFilter.sos => 'sos',
-        SampleFilter.restructure => 'restructure',
-        SampleFilter.vacuumFocus => 'vacuum_focus',
-      };
+    SampleFilter.all => 'all',
+    SampleFilter.dailyDeviation => 'daily_deviation',
+    SampleFilter.sos => 'sos',
+    SampleFilter.restructure => 'restructure',
+    SampleFilter.vacuumFocus => 'vacuum_focus',
+  };
 
   static SampleFilter? fromQueryValue(String? value) {
     return switch (value) {
@@ -53,11 +53,11 @@ enum InsightEntrySource {
   final String label;
 
   String get queryValue => switch (this) {
-        InsightEntrySource.homeArchive => 'home_archive',
-        InsightEntrySource.weeklySummary => 'weekly_summary',
-        InsightEntrySource.positiveSignal => 'positive_signal',
-        InsightEntrySource.homeSuggestion => 'home_suggestion',
-      };
+    InsightEntrySource.homeArchive => 'home_archive',
+    InsightEntrySource.weeklySummary => 'weekly_summary',
+    InsightEntrySource.positiveSignal => 'positive_signal',
+    InsightEntrySource.homeSuggestion => 'home_suggestion',
+  };
 
   static InsightEntrySource? fromQueryValue(String? value) {
     return switch (value) {
@@ -70,36 +70,36 @@ enum InsightEntrySource {
   }
 }
 
-final recentSamplesProvider =
-    FutureProvider.autoDispose.family<List<InertiaSample>, SampleFilter>((
-  ref,
-  filter,
-) {
-  return ref.watch(userProfileRepositoryProvider).getRecentSamples(
-        sourceType: switch (filter) {
-          SampleFilter.all => null,
-          SampleFilter.dailyDeviation => 'daily_checkin',
-          SampleFilter.sos => 'sos',
-          SampleFilter.restructure => 'manual',
-          SampleFilter.vacuumFocus => 'vacuum_focus',
-        },
-      );
-});
+final recentSamplesProvider = FutureProvider.autoDispose
+    .family<List<InertiaSample>, SampleFilter>((ref, filter) {
+      return ref
+          .watch(userProfileRepositoryProvider)
+          .getRecentSamples(
+            sourceType: switch (filter) {
+              SampleFilter.all => null,
+              SampleFilter.dailyDeviation => 'daily_checkin',
+              SampleFilter.sos => 'sos',
+              SampleFilter.restructure => 'manual',
+              SampleFilter.vacuumFocus => 'vacuum_focus',
+            },
+          );
+    });
 
-final weeklyReviewProvider =
-    FutureProvider.autoDispose<WeeklyReviewSummary>((ref) {
+final weeklyReviewProvider = FutureProvider.autoDispose<WeeklyReviewSummary>((
+  ref,
+) {
   return ref.watch(userProfileRepositoryProvider).getWeeklyReviewSummary();
 });
 
 final topDeviationPatternsProvider =
     FutureProvider.autoDispose<List<DeviationPattern>>((ref) {
-  return ref.watch(userProfileRepositoryProvider).getTopDeviationPatterns();
-});
+      return ref.watch(userProfileRepositoryProvider).getTopDeviationPatterns();
+    });
 
 final insightTrendSummaryProvider =
     FutureProvider.autoDispose<InsightTrendSummary>((ref) {
-  return ref.watch(userProfileRepositoryProvider).getInsightTrendSummary();
-});
+      return ref.watch(userProfileRepositoryProvider).getInsightTrendSummary();
+    });
 
 class InsightsPage extends ConsumerStatefulWidget {
   const InsightsPage({super.key});
@@ -121,8 +121,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
 
     setState(() {
       _selectedFilter = filter;
-      _appliedFilterKey =
-          filter == SampleFilter.all ? null : filter.queryValue;
+      _appliedFilterKey = filter == SampleFilter.all ? null : filter.queryValue;
     });
     // 筛选是同一页面内的维度切换，用 replace 仅替换当前路由，保留返回栈。
     context.replace(_insightsLocation(filter, source: _entrySource));
@@ -215,7 +214,8 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: SampleFilter.values.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 8),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final filter = SampleFilter.values[index];
                     final isSelected = filter == _selectedFilter;
@@ -224,12 +224,13 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                       label: Text(filter.label),
                       selected: isSelected,
                       onSelected: (_) => _handleFilterSelected(filter),
-                      labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: isSelected
-                            ? const Color(0xFF819B8E)
-                            : const Color(0xFF8E8E93),
-                        fontWeight: FontWeight.w600,
-                      ),
+                      labelStyle: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(
+                            color: isSelected
+                                ? const Color(0xFF819B8E)
+                                : const Color(0xFF8E8E93),
+                            fontWeight: FontWeight.w600,
+                          ),
                       selectedColor: const Color(0xFFE8F0EC),
                       backgroundColor: Colors.white,
                       side: const BorderSide(color: Color(0xFFE5E5EA)),
@@ -261,34 +262,38 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                       const SizedBox(height: 16),
                       if (_showsWeeklyReview(_selectedFilter))
                         weeklyReviewAsync.when(
-                        data: (summary) => _WeeklyReviewCard(summary: summary),
-                        loading: () => const SizedBox.shrink(),
-                        error: (error, stackTrace) => const SizedBox.shrink(),
-                      ),
+                          data: (summary) =>
+                              _WeeklyReviewCard(summary: summary),
+                          loading: () => const SizedBox.shrink(),
+                          error: (error, stackTrace) => const SizedBox.shrink(),
+                        ),
                       if (_showsWeeklyReview(_selectedFilter))
                         const SizedBox(height: 16),
                       if (_showsPositiveSignal(_selectedFilter))
                         weeklyReviewAsync.when(
-                        data: (summary) => _PositiveSignalCard(summary: summary),
-                        loading: () => const SizedBox.shrink(),
-                        error: (error, stackTrace) => const SizedBox.shrink(),
-                      ),
+                          data: (summary) =>
+                              _PositiveSignalCard(summary: summary),
+                          loading: () => const SizedBox.shrink(),
+                          error: (error, stackTrace) => const SizedBox.shrink(),
+                        ),
                       if (_showsPositiveSignal(_selectedFilter))
                         const SizedBox(height: 16),
                       if (_showsDeviationPatterns(_selectedFilter))
                         topPatternsAsync.when(
-                        data: (patterns) => _DeviationPatternCard(patterns: patterns),
-                        loading: () => const SizedBox.shrink(),
-                        error: (error, stackTrace) => const SizedBox.shrink(),
-                      ),
+                          data: (patterns) =>
+                              _DeviationPatternCard(patterns: patterns),
+                          loading: () => const SizedBox.shrink(),
+                          error: (error, stackTrace) => const SizedBox.shrink(),
+                        ),
                       if (_showsDeviationPatterns(_selectedFilter))
                         const SizedBox(height: 16),
                       if (_showsTrendSummary(_selectedFilter))
                         trendSummaryAsync.when(
-                        data: (summary) => _TrendSummaryCard(summary: summary),
-                        loading: () => const SizedBox.shrink(),
-                        error: (error, stackTrace) => const SizedBox.shrink(),
-                      ),
+                          data: (summary) =>
+                              _TrendSummaryCard(summary: summary),
+                          loading: () => const SizedBox.shrink(),
+                          error: (error, stackTrace) => const SizedBox.shrink(),
+                        ),
                       if (_showsTrendSummary(_selectedFilter))
                         const SizedBox(height: 16),
                       Text(
@@ -347,9 +352,8 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                       Center(
                         child: Text(
                           insightsCopy.footer,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0x998E8E93),
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: const Color(0x998E8E93)),
                         ),
                       ),
                     ],
@@ -387,9 +391,9 @@ String _emptyStateText(SampleFilter filter) {
     case SampleFilter.all:
       return '这里还是一张白纸。开始记录后，它会慢慢有内容。';
     case SampleFilter.dailyDeviation:
-      return '最近 7 天还没有记录到每日偏离，新的惯性正在慢慢成形。';
+      return '最近 7 天没有每日偏离记录。你可以结合实际经历回看。';
     case SampleFilter.sos:
-      return '最近 7 天你还没有触发 SOS，这也是一种稳定的证据。';
+      return '最近 7 天没有 SOS 记录。你可以结合实际经历回看。';
     case SampleFilter.restructure:
       return '这一期的身份重构记录还没有沉淀到这里。';
     case SampleFilter.vacuumFocus:
@@ -398,10 +402,7 @@ String _emptyStateText(SampleFilter filter) {
 }
 
 class _InsightEmptyStateCard extends StatelessWidget {
-  const _InsightEmptyStateCard({
-    required this.filter,
-    required this.onTap,
-  });
+  const _InsightEmptyStateCard({required this.filter, required this.onTap});
 
   final SampleFilter filter;
   final VoidCallback onTap;
@@ -476,11 +477,7 @@ class _InsightFollowupCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              action.icon,
-              size: 18,
-              color: action.accentColor,
-            ),
+            child: Icon(action.icon, size: 18, color: action.accentColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -532,10 +529,7 @@ class _InsightFollowupCard extends StatelessWidget {
 }
 
 class _EmptyStateAction {
-  const _EmptyStateAction({
-    required this.label,
-    required this.route,
-  });
+  const _EmptyStateAction({required this.label, required this.route});
 
   final String label;
   final String route;
@@ -560,10 +554,7 @@ class _FollowupAction {
 }
 
 class _InsightEntrySourceCard extends StatelessWidget {
-  const _InsightEntrySourceCard({
-    required this.source,
-    required this.filter,
-  });
+  const _InsightEntrySourceCard({required this.source, required this.filter});
 
   final InsightEntrySource source;
   final SampleFilter filter;
@@ -591,11 +582,7 @@ class _InsightEntrySourceCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              config.icon,
-              size: 18,
-              color: config.accentColor,
-            ),
+            child: Icon(config.icon, size: 18, color: config.accentColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -769,11 +756,7 @@ class _FilterContextCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(19),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              config.icon,
-              size: 18,
-              color: config.accentColor,
-            ),
+            child: Icon(config.icon, size: 18, color: config.accentColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -850,7 +833,10 @@ class _WeeklyReviewCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE8F0EC),
                     borderRadius: BorderRadius.circular(10),
@@ -858,17 +844,17 @@ class _WeeklyReviewCard extends StatelessWidget {
                   child: Text(
                     '本周复盘',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF819B8E),
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: const Color(0xFF819B8E),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const Spacer(),
                 Text(
                   '最近 7 天',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF8E8E93),
-                      ),
+                    color: const Color(0xFF8E8E93),
+                  ),
                 ),
               ],
             ),
@@ -876,17 +862,17 @@ class _WeeklyReviewCard extends StatelessWidget {
             Text(
               summary.summaryTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF2D2D2D),
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: const Color(0xFF2D2D2D),
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 10),
             Text(
               summary.summaryBody,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF5B5B5B),
-                    height: 1.6,
-                  ),
+                color: const Color(0xFF5B5B5B),
+                height: 1.6,
+              ),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -894,8 +880,14 @@ class _WeeklyReviewCard extends StatelessWidget {
               runSpacing: 8,
               children: [
                 _StatPill(label: '匹配', value: summary.matchCount.toString()),
-                _StatPill(label: '部分偏离', value: summary.partialCount.toString()),
-                _StatPill(label: '完全偏离', value: summary.fullDeviationCount.toString()),
+                _StatPill(
+                  label: '部分偏离',
+                  value: summary.partialCount.toString(),
+                ),
+                _StatPill(
+                  label: '完全偏离',
+                  value: summary.fullDeviationCount.toString(),
+                ),
                 _StatPill(label: 'SOS', value: summary.sosCount.toString()),
                 _StatPill(
                   label: '真空专注',
@@ -926,7 +918,10 @@ class _PositiveSignalCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEAF2F7),
                     borderRadius: BorderRadius.circular(10),
@@ -934,17 +929,17 @@ class _PositiveSignalCard extends StatelessWidget {
                   child: Text(
                     '正向回流信号',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF6E8FA3),
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: const Color(0xFF6E8FA3),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const Spacer(),
                 Text(
                   '最近 7 天',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF8E8E93),
-                      ),
+                    color: const Color(0xFF8E8E93),
+                  ),
                 ),
               ],
             ),
@@ -952,17 +947,17 @@ class _PositiveSignalCard extends StatelessWidget {
             Text(
               summary.positiveSignalTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF2D2D2D),
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: const Color(0xFF2D2D2D),
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 10),
             Text(
               summary.positiveSignalBody,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF5B5B5B),
-                    height: 1.6,
-                  ),
+                color: const Color(0xFF5B5B5B),
+                height: 1.6,
+              ),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -999,7 +994,10 @@ class _DeviationPatternCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF9F5EC),
                     borderRadius: BorderRadius.circular(10),
@@ -1007,29 +1005,27 @@ class _DeviationPatternCard extends StatelessWidget {
                   child: Text(
                     '高频偏离模式',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFFC2A878),
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: const Color(0xFFC2A878),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const Spacer(),
                 Text(
                   '最近 7 天',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF8E8E93),
-                      ),
+                    color: const Color(0xFF8E8E93),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 14),
             Text(
-              patterns.isEmpty
-                  ? '最近 7 天还没有形成明显的偏离模式'
-                  : '最近最常出现的拉扯，已经开始变得可识别',
+              patterns.isEmpty ? '最近 7 天还没有形成明显的偏离模式' : '最近最常出现的拉扯，已经开始变得可识别',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF2D2D2D),
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: const Color(0xFF2D2D2D),
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 10),
             Text(
@@ -1037,9 +1033,9 @@ class _DeviationPatternCard extends StatelessWidget {
                   ? '继续记录就好，样本足够时这些模式会更清楚。'
                   : '不急着解决全部问题，先反复看见最常出现的那几种模式。',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF5B5B5B),
-                    height: 1.6,
-                  ),
+                color: const Color(0xFF5B5B5B),
+                height: 1.6,
+              ),
             ),
             if (patterns.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -1067,7 +1063,8 @@ class _DeviationPatternCard extends StatelessWidget {
                         alignment: Alignment.center,
                         child: Text(
                           '${index + 1}',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
                                 color: pattern.sourceType == 'sos'
                                     ? const Color(0xFF819B8E)
                                     : const Color(0xFFC2A878),
@@ -1082,7 +1079,8 @@ class _DeviationPatternCard extends StatelessWidget {
                           children: [
                             Text(
                               pattern.label,
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
                                     color: const Color(0xFF2D2D2D),
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1090,7 +1088,8 @@ class _DeviationPatternCard extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               pattern.summary,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
                                     color: const Color(0xFF8E8E93),
                                     height: 1.5,
                                   ),
@@ -1111,10 +1110,7 @@ class _DeviationPatternCard extends StatelessWidget {
 }
 
 class _StatPill extends StatelessWidget {
-  const _StatPill({
-    required this.label,
-    required this.value,
-  });
+  const _StatPill({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -1131,9 +1127,9 @@ class _StatPill extends StatelessWidget {
       child: Text(
         '$label $value',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: const Color(0xFF5B5B5B),
-              fontWeight: FontWeight.w600,
-            ),
+          color: const Color(0xFF5B5B5B),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -1155,17 +1151,17 @@ class _TrendSummaryCard extends StatelessWidget {
             Text(
               '样本来源分布',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF2D2D2D),
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: const Color(0xFF2D2D2D),
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               summary.dominantLabel,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF5B5B5B),
-                    height: 1.6,
-                  ),
+                color: const Color(0xFF5B5B5B),
+                height: 1.6,
+              ),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -1271,8 +1267,9 @@ bool _showsDeviationPatterns(SampleFilter filter) {
 
 bool _showsTrendSummary(SampleFilter filter) {
   return switch (filter) {
-    SampleFilter.all || SampleFilter.restructure || SampleFilter.vacuumFocus =>
-      true,
+    SampleFilter.all ||
+    SampleFilter.restructure ||
+    SampleFilter.vacuumFocus => true,
     _ => false,
   };
 }
@@ -1356,10 +1353,7 @@ _FilterContextConfig _filterContextConfig(
 _EmptyStateAction _emptyStateAction(SampleFilter filter) {
   switch (filter) {
     case SampleFilter.all:
-      return const _EmptyStateAction(
-        label: '回首页继续最小动作',
-        route: AppRoutes.home,
-      );
+      return const _EmptyStateAction(label: '回首页继续最小动作', route: AppRoutes.home);
     case SampleFilter.dailyDeviation:
       return const _EmptyStateAction(
         label: '回首页做今日校验',
@@ -1506,10 +1500,7 @@ _InsightEntrySourceConfig _entrySourceConfig(
   }
 }
 
-String _insightsLocation(
-  SampleFilter filter, {
-  InsightEntrySource? source,
-}) {
+String _insightsLocation(SampleFilter filter, {InsightEntrySource? source}) {
   final queryParameters = <String, String>{};
   if (filter != SampleFilter.all) {
     queryParameters['filter'] = filter.queryValue;

@@ -5,8 +5,8 @@ import '../../../app/system/system_resident.dart';
 
 final systemResidentStatusProvider =
     FutureProvider.autoDispose<SystemResidentStatus>((ref) {
-  return SystemResident.status();
-});
+      return SystemResident.status();
+    });
 
 /// 设置页里的「后台常驻与提醒」面板：展示系统授权状态并提供授权入口。
 class ResidentSettingsCard extends ConsumerStatefulWidget {
@@ -51,13 +51,13 @@ class _ResidentSettingsCardState extends ConsumerState<ResidentSettingsCard>
           children: [
             Text(
               '后台常驻与提醒',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
-              '开启后应用进程会在后台保留，日间打断与温和提醒即使被划掉也能准时到达。'
+              '开启后会尝试维持后台服务并安排提醒。实际送达受通知权限、电池限制和系统策略影响。'
               '若系统限制了后台运行，需要按下面几项逐一放行。',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: const Color(0xFF8E8E93),

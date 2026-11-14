@@ -23,11 +23,11 @@ class AppController extends ChangeNotifier {
     bool isInitializing = false,
     bool isSaving = false,
     String? errorMessage,
-  })  : _repository = null,
-        _profile = profile,
-        _isInitializing = isInitializing,
-        _isSaving = isSaving,
-        _errorMessage = errorMessage;
+  }) : _repository = null,
+       _profile = profile,
+       _isInitializing = isInitializing,
+       _isSaving = isSaving,
+       _errorMessage = errorMessage;
 
   final UserProfileRepository? _repository;
 
@@ -41,7 +41,10 @@ class AppController extends ChangeNotifier {
   bool get isInitializing => _isInitializing;
   bool get isSaving => _isSaving;
   String? get errorMessage => _errorMessage;
-  bool get hasCompletedInitialRestructure => profile.hasCompletedInitialRestructure;
+  bool get hasInitializationError =>
+      !_isInitializing && _profile == null && _errorMessage != null;
+  bool get hasCompletedInitialRestructure =>
+      profile.hasCompletedInitialRestructure;
 
   Future<void> init() async {
     // 已经成功初始化过就不再重复；但失败后允许通过"重新初始化"重试。

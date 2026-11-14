@@ -5,6 +5,8 @@ class InertiaSample {
     required this.statusTag,
     required this.content,
     required this.createdAt,
+    this.promptId,
+    this.promptSnapshot,
   });
 
   final int id;
@@ -12,6 +14,8 @@ class InertiaSample {
   final String statusTag;
   final String content;
   final DateTime createdAt;
+  final String? promptId;
+  final String? promptSnapshot;
 
   factory InertiaSample.fromMap(Map<String, Object?> map) {
     return InertiaSample(
@@ -20,6 +24,8 @@ class InertiaSample {
       statusTag: map['status_tag'] as String? ?? '',
       content: map['content'] as String? ?? '',
       createdAt: _parseTimestamp(map['created_at']) ?? DateTime.now(),
+      promptId: map['prompt_id'] as String?,
+      promptSnapshot: map['prompt_snapshot'] as String?,
     );
   }
 

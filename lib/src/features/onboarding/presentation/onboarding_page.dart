@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
 import '../../../core/copy/neutral_copy_engine.dart';
+import '../../../core/widgets/method_note.dart';
 
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
@@ -38,6 +39,10 @@ class OnboardingPage extends StatelessWidget {
                 ),
               ),
               const Spacer(flex: 3),
+              TextButton(
+                onPressed: () => showMethodNote(context),
+                child: const Text('晨间探索 → 日间观察 → 晚间综合 · 方法说明'),
+              ),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -73,7 +78,8 @@ class OnboardingPage extends StatelessWidget {
                               ),
                             ),
                             TextSpan(
-                              text: '如果方便，可以先减少手机干扰。应用只会记录你的降噪偏好，不会替你屏蔽其他应用或系统通知。',
+                              text:
+                                  '如果方便，可以先减少手机干扰。应用只会记录你的降噪偏好，不会替你屏蔽其他应用或系统通知。',
                             ),
                           ],
                         ),

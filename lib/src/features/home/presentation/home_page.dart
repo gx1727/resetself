@@ -6,6 +6,8 @@ import '../../../app/navigation/app_routes.dart';
 import '../../../app/state/app_controller.dart';
 import '../../../core/copy/neutral_copy_engine.dart';
 import '../../../core/widgets/resetself_mark.dart';
+import '../../../core/widgets/direction_summary.dart';
+import '../../../core/widgets/min_action_editor.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../data/models/action_feedback.dart';
 import '../../../data/models/daily_checkin.dart';
@@ -241,6 +243,18 @@ class HomePage extends ConsumerWidget {
                                             ),
                                       ),
                                       const SizedBox(height: 14),
+                                      if (latestRestructureAsync.valueOrNull !=
+                                          null)
+                                        DirectionSummary(
+                                          record: latestRestructureAsync
+                                              .valueOrNull!,
+                                          title: '这一步服务的方向',
+                                        ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            showMinActionEditor(context),
+                                        child: const Text('修改最小启动行动'),
+                                      ),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 12,
@@ -949,10 +963,7 @@ class _HomeInterruptCard extends StatelessWidget {
 }
 
 class _HomeFeedbackLoopCard extends StatelessWidget {
-  const _HomeFeedbackLoopCard({
-    required this.feedbacks,
-    required this.onTap,
-  });
+  const _HomeFeedbackLoopCard({required this.feedbacks, required this.onTap});
 
   final List<ActionFeedback> feedbacks;
   final VoidCallback onTap;

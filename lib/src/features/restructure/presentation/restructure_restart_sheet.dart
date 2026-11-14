@@ -4,9 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
 import '../../../app/state/app_controller.dart';
+import '../../../data/database/database_providers.dart';
 
 /// 用户在弹层里选择的重启方式。
 enum RestructureRestartChoice {
+  continueExploration,
+  archiveAndStartNew,
+
   /// 彻底清空所有已有数据后重建。
   clearAll,
 
@@ -41,9 +45,31 @@ Future<void> openRestructureRestartFlow(
   if (choice == null || !context.mounted) {
     return;
   }
+  if (choice == RestructureRestartChoice.continueExploration) {
+    await context.push(AppRoutes.restructureMorning);
+    return;
+  }
 
   if (choice == RestructureRestartChoice.editLastAnswers) {
-    context.push(AppRoutes.restructureSetupEdit);
+    await context.push(AppRoutes.restructureSetupEdit);
+    return;
+  }
+  if (choice == RestructureRestartChoice.archiveAndStartNew) {
+    if (await confirmMorningReplacement(context) != true || !context.mounted) {
+      return;
+    }
+    try {
+      await ref
+          .read(userProfileRepositoryProvider)
+          .archiveCurrentMorningAndStartNew();
+      if (context.mounted) await context.push(AppRoutes.restructureMorning);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('新探索未开始，原稿和草稿仍保留，请重试。')));
+      }
+    }
     return;
   }
 
@@ -59,6 +85,29 @@ Future<void> openRestructureRestartFlow(
 
   context.go(AppRoutes.onboarding);
 }
+
+Future<bool?> confirmMorningReplacement(
+  BuildContext context, {
+  bool restoring = false,
+}) => showDialog<bool>(
+  context: context,
+  builder: (dialogContext) => AlertDialog(
+    title: Text(restoring ? '恢复这份原稿？' : '开始一份新探索？'),
+    content: Text(
+      '当前晨间原稿及待回看标记会独立归档。未提交的晚间草稿将清除，已保存方向、观察和反馈继续保留。${restoring ? '这份历史原稿会复制为当前稿，历史归档继续保留。' : ''}',
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(dialogContext).pop(false),
+        child: const Text('取消'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.of(dialogContext).pop(true),
+        child: Text(restoring ? '归档当前并恢复' : '归档并开始'),
+      ),
+    ],
+  ),
+);
 
 Future<bool?> _confirmClearAll(BuildContext context) {
   return showDialog<bool>(
@@ -139,6 +188,26 @@ class _RestructureRestartSheet extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            _RestartOptionCard(
+              icon: Icons.archive_outlined,
+              accentColor: const Color(0xFF819B8E),
+              title: '归档原稿，开始新探索',
+              description: '保留旧晨稿和标记；清除未提交的晚间草稿，开始一份空白原稿。',
+              onTap: () => Navigator.of(
+                context,
+              ).pop(RestructureRestartChoice.archiveAndStartNew),
+            ),
+            const SizedBox(height: 12),
+            _RestartOptionCard(
+              icon: Icons.play_arrow_outlined,
+              accentColor: const Color(0xFF819B8E),
+              title: '继续当前探索原稿',
+              description: '保留晨间原稿，继续补充；晚间可以回看所选日期的观察。',
+              onTap: () => Navigator.of(
+                context,
+              ).pop(RestructureRestartChoice.continueExploration),
             ),
             const SizedBox(height: 12),
             _RestartOptionCard(

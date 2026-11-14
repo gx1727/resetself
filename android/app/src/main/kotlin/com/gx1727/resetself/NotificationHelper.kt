@@ -55,7 +55,7 @@ object NotificationHelper {
         return builder
             .setSmallIcon(R.drawable.ic_stat_resetself)
             .setContentTitle("ResetSelf 正在守护今日节奏")
-            .setContentText("提醒会在后台准时到达")
+            .setContentText("已安排提醒，送达可能受权限和系统影响")
             .setOngoing(true)
             .setShowWhen(false)
             .setContentIntent(activityIntent(context, RESIDENT_NOTIFICATION_ID, ""))

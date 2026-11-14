@@ -50,7 +50,7 @@ class _ResetSelfRootState extends ConsumerState<ResetSelfRoot> {
 
     final controller = ref.read(appControllerProvider);
     // 初始化完成前不跳转，否则会被引导页重定向吞掉。
-    if (controller.isInitializing || controller.errorMessage != null) {
+    if (controller.isInitializing || controller.hasInitializationError) {
       return;
     }
 

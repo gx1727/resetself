@@ -17,6 +17,7 @@ import '../models/deviation_pattern.dart';
 import '../models/identity_anchor.dart';
 import '../models/insight_trend_summary.dart';
 import '../models/inertia_sample.dart';
+import '../models/morning_archive.dart';
 import '../models/restructure_archive_record.dart';
 import '../models/restructure_draft.dart';
 import '../models/user_profile.dart';
@@ -58,6 +59,36 @@ class UserProfileRepository {
     }
 
     return UserProfile.fromMap(rows.first);
+  }
+
+  Future<void> updateTodayMinAction(String action, {String? reason}) async {
+    if (action.trim().isEmpty) throw ArgumentError('最小行动不能为空');
+    final db = await _database.database;
+    await db.transaction((txn) async {
+      await _ensureSingleProfileInTransaction(txn);
+      final profile = (await txn.query(
+        'user_profile',
+        where: 'id = ?',
+        whereArgs: [1],
+      )).single;
+      final previous = profile['today_min_action'] as String;
+      if (previous == action.trim()) return;
+      await txn.insert('action_change', {
+        'previous_action': previous,
+        'new_action': action.trim(),
+        'reason': reason?.trim(),
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      await txn.update(
+        'user_profile',
+        {
+          'today_min_action': action.trim(),
+          'updated_at': DateTime.now().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [1],
+      );
+    });
   }
 
   Future<RestructureDraft> getRestructureDraft() async {
@@ -110,12 +141,174 @@ class UserProfileRepository {
       'answer': trimmed,
       'updated_at': DateTime.now().toIso8601String(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
+    await _ensureExplorationStart(db);
   }
 
   /// 清空晨间探索原稿（用于重新开始一次晨间挖掘）。
   Future<void> clearMorningAnswers() async {
     final db = await _database.database;
-    await db.delete('restructure_morning_answer');
+    await db.transaction((txn) async {
+      await txn.delete('restructure_morning_answer');
+      await txn.delete('exploration_state');
+    });
+  }
+
+  /// Save a full in-memory snapshot atomically, including cleared answers.
+  Future<void> saveMorningAnswers(
+    Map<String, String> answers, {
+    Set<String>? reviewKeys,
+  }) async {
+    final db = await _database.database;
+    await db.transaction((txn) async {
+      if (answers.values.any((value) => value.trim().isNotEmpty) ||
+          (reviewKeys?.isNotEmpty ?? false)) {
+        await _ensureExplorationStart(txn);
+      }
+      if (reviewKeys != null) {
+        await txn.update(
+          'exploration_state',
+          {'review_question_keys': jsonEncode(reviewKeys.toList()..sort())},
+          where: 'id = ?',
+          whereArgs: [1],
+        );
+      }
+      for (final entry in answers.entries) {
+        if (entry.value.trim().isEmpty) {
+          await txn.delete(
+            'restructure_morning_answer',
+            where: 'question_key = ?',
+            whereArgs: [entry.key],
+          );
+        } else {
+          await txn.insert(
+            'restructure_morning_answer',
+            {
+              'question_key': entry.key,
+              'answer': entry.value.trim(),
+              'updated_at': DateTime.now().toIso8601String(),
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      }
+    });
+  }
+
+  Future<Set<String>> getMorningReviewKeys() async {
+    final db = await _database.database;
+    final rows = await db.query('exploration_state', limit: 1);
+    return rows.isEmpty
+        ? {}
+        : Set<String>.from(
+            jsonDecode(rows.first['review_question_keys'] as String) as List,
+          );
+  }
+
+  Future<List<MorningArchive>> getMorningArchives() async {
+    final db = await _database.database;
+    return (await db.query(
+      'morning_archive',
+      orderBy: 'id DESC',
+    )).map(MorningArchive.fromMap).toList();
+  }
+
+  Future<List<Map<String, Object?>>> getActionChanges() async {
+    final db = await _database.database;
+    return db.query('action_change', orderBy: 'id DESC');
+  }
+
+  Future<void> _archiveCurrentMorning(Transaction txn) async {
+    final rows = await txn.query('restructure_morning_answer');
+    final state = await txn.query('exploration_state', limit: 1);
+    final keys = state.isEmpty
+        ? '[]'
+        : state.first['review_question_keys'] as String;
+    if (rows.isEmpty && (jsonDecode(keys) as List).isEmpty) return;
+    await txn.insert('morning_archive', {
+      'started_at': state.isEmpty ? null : state.first['started_at'],
+      'archived_at': DateTime.now().toIso8601String(),
+      'answers_json': jsonEncode({
+        for (final row in rows)
+          row['question_key'] as String: row['answer'] as String,
+      }),
+      'review_keys_json': keys,
+    });
+  }
+
+  /// The archive and replacement commit together; a failure keeps both drafts.
+  Future<void> archiveCurrentMorningAndStartNew({int? restoreArchiveId}) async {
+    final db = await _database.database;
+    await db.transaction((txn) async {
+      MorningArchive? archive;
+      if (restoreArchiveId != null) {
+        final rows = await txn.query(
+          'morning_archive',
+          where: 'id = ?',
+          whereArgs: [restoreArchiveId],
+        );
+        if (rows.isEmpty) throw StateError('原稿归档已不存在');
+        archive = MorningArchive.fromMap(rows.single);
+      }
+      await _archiveCurrentMorning(txn);
+      await txn.delete('restructure_morning_answer');
+      await txn.delete('exploration_state');
+      await txn.delete('restructure_draft');
+      if (archive != null) {
+        await txn.insert('exploration_state', {
+          'id': 1,
+          'started_at': (archive.startedAt ?? archive.archivedAt)
+              .toIso8601String(),
+          'review_question_keys': jsonEncode(archive.reviewKeys.toList()),
+        });
+        for (final entry in archive.answers.entries) {
+          await txn.insert('restructure_morning_answer', {
+            'question_key': entry.key,
+            'answer': entry.value,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _ensureExplorationStart(DatabaseExecutor db) async {
+    await db.insert('exploration_state', {
+      'id': 1,
+      'started_at': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  Future<DateTime?> getMorningExplorationStartedAt() async {
+    final db = await _database.database;
+    final rows = await db.query('exploration_state', limit: 1);
+    return rows.isEmpty
+        ? null
+        : DateTime.tryParse(rows.first['started_at'] as String? ?? '');
+  }
+
+  Future<String> getExplorationDraftStatus() async {
+    final db = await _database.database;
+    final morning = await db.query(
+      'restructure_morning_answer',
+      orderBy: 'updated_at DESC',
+      limit: 1,
+    );
+    final evening = await db.query('restructure_draft', limit: 1);
+    final parts = <String>[];
+    if (morning.isNotEmpty) {
+      parts.add('晨间原稿已保存 · 最近更新 ${morning.first['updated_at']}');
+    } else {
+      final state = await db.query('exploration_state', limit: 1);
+      if (state.isNotEmpty &&
+          (jsonDecode(state.first['review_question_keys'] as String) as List)
+              .isNotEmpty) {
+        parts.add('晨间待回看标记已保存，可以继续探索。');
+      }
+    }
+    if (evening.isNotEmpty) {
+      parts.add('晚间草稿已保存 · 最近更新 ${evening.first['updated_at']}');
+    }
+    return parts.isEmpty ? '当前没有待继续的探索草稿。' : parts.join('\n');
   }
 
   Future<VacuumModeSettings> getVacuumModeSettings() async {
@@ -275,6 +468,7 @@ class UserProfileRepository {
         'month_project': draft.monthProject.trim(),
         'constraints': draft.constraints.trim(),
         'value_constraints': draft.valueConstraints.trim(),
+        'change_reason': draft.changeReason.trim(),
         'is_latest': 1,
         'create_year': year,
         'created_at': now,
@@ -291,7 +485,7 @@ class UserProfileRepository {
       await txn.insert('inertia_sample', {
         'source_type': 'manual',
         'status_tag': '首次重构',
-        'content': '新的身份已落地：${draft.identityDraft.trim()}',
+        'content': '本次身份表达已保存：${draft.identityDraft.trim()}',
         'belief_ref_id': beliefId,
         'created_at': now,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -309,14 +503,45 @@ class UserProfileRepository {
         whereArgs: [restructureRecordId],
       );
 
+      // The identity library belongs to the same submission: failure rolls
+      // back the formal direction and leaves the editable draft intact.
+      final identity = draft.identityDraft.trim();
+      final existingAnchors = await txn.query(
+        'identity_anchor',
+        where: 'is_active = 1 AND anchor_text = ?',
+        whereArgs: [identity],
+        limit: 1,
+      );
+      await txn.update(
+        'identity_anchor',
+        {'is_active': 0, 'updated_at': now},
+        where: 'is_active = 1 AND anchor_text != ?',
+        whereArgs: [identity],
+      );
+      final anchorId = existingAnchors.isEmpty
+          ? await txn.insert('identity_anchor', {
+              'anchor_text': identity,
+              'source': IdentityAnchor.sourceRestructure,
+              'is_active': 1,
+              'sort_order': 0,
+              'created_at': now,
+              'updated_at': now,
+            })
+          : existingAnchors.first['id'] as int;
+      await txn.update(
+        'identity_anchor',
+        {'sort_order': 0, 'updated_at': now},
+        where: 'id = ?',
+        whereArgs: [anchorId],
+      );
+      await txn.update(
+        'user_profile',
+        {'current_anchor_id': anchorId},
+        where: 'id = ?',
+        whereArgs: [1],
+      );
       await _syncYearlyArchivesInTransaction(txn);
     });
-
-    // 事务外把"新身份"沉淀进身份库，并同步为当前聚焦身份。
-    await saveIdentityAnchors([
-      draft.identityDraft,
-    ], source: IdentityAnchor.sourceRestructure);
-    await syncIdentityTextFromCurrentAnchor();
   }
 
   Future<void> saveDailyCheckin(CheckinStatus status) async {
@@ -388,6 +613,8 @@ class UserProfileRepository {
   Future<void> saveDaytimeInterruptReflection({
     required String content,
     required String statusTag,
+    String? promptId,
+    String? promptSnapshot,
   }) async {
     final trimmed = content.trim();
     if (trimmed.isEmpty) {
@@ -400,22 +627,52 @@ class UserProfileRepository {
       'source_type': 'daytime_interrupt',
       'status_tag': statusTag,
       'content': trimmed,
+      'prompt_id': promptId,
+      'prompt_snapshot': promptSnapshot,
       'created_at': DateTime.now().toIso8601String(),
     });
   }
 
   /// 今天已经留下过的日间打断自省。
   Future<List<InertiaSample>> getTodayInterruptReflections() async {
-    final db = await _database.database;
-    final rows = await db.rawQuery('''
-      SELECT id, source_type, status_tag, content, created_at
-      FROM inertia_sample
-      WHERE source_type = 'daytime_interrupt'
-        AND date(created_at) = date('now', 'localtime')
-      ORDER BY datetime(created_at) DESC
-    ''');
+    final today = DateTime.now();
+    return getInterruptReflections(start: today, end: today);
+  }
 
-    return rows.map(InertiaSample.fromMap).toList();
+  /// Inclusive local calendar days. Dart normalizes both ISO timestamps with
+  /// offsets and legacy SQLite timestamps before comparing, including DST.
+  Future<List<InertiaSample>> getInterruptReflections({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final startLocal = start.toLocal();
+    final endLocal = end.toLocal();
+    final from = DateTime(startLocal.year, startLocal.month, startLocal.day);
+    final until = DateTime(endLocal.year, endLocal.month, endLocal.day + 1);
+    if (!until.isAfter(from)) throw ArgumentError('观察日期范围无效');
+    final db = await _database.database;
+    final rows = await db.query(
+      'inertia_sample',
+      where: 'source_type = ?',
+      whereArgs: ['daytime_interrupt'],
+    );
+    final records =
+        rows
+            .where(
+              (row) =>
+                  DateTime.tryParse(row['created_at'] as String? ?? '') != null,
+            )
+            .map(InertiaSample.fromMap)
+            .where((record) {
+              final at = record.createdAt.toLocal();
+              return !at.isBefore(from) && at.isBefore(until);
+            })
+            .toList()
+          ..sort((a, b) {
+            final time = b.createdAt.compareTo(a.createdAt);
+            return time == 0 ? b.id.compareTo(a.id) : time;
+          });
+    return records;
   }
 
   /// 行动反馈闭环：记录一次「尝试 → 发生 → 认识 → 调整」。
@@ -426,6 +683,7 @@ class UserProfileRepository {
     required String happened,
     required String insight,
     required String adjustment,
+    String? directionSnapshot,
   }) async {
     final trimmedAttempted = attempted.trim();
     final trimmedHappened = happened.trim();
@@ -446,12 +704,15 @@ class UserProfileRepository {
       'happened': trimmedHappened,
       'insight': trimmedInsight,
       'adjustment': trimmedAdjustment,
+      'direction_snapshot': directionSnapshot,
       'created_at': DateTime.now().toIso8601String(),
     });
   }
 
   /// 最近留下的行动反馈闭环记录，用于回看与继续调整。
-  Future<List<ActionFeedback>> getRecentActionFeedbacks({int limit = 20}) async {
+  Future<List<ActionFeedback>> getRecentActionFeedbacks({
+    int limit = 20,
+  }) async {
     final db = await _database.database;
     final rows = await db.query(
       'action_feedback',
@@ -608,6 +869,9 @@ class UserProfileRepository {
       'yearly_archive',
       'identity_anchor',
       'action_feedback',
+      'exploration_state',
+      'morning_archive',
+      'action_change',
     ];
 
     final tables = <String, Object?>{};
@@ -833,6 +1097,7 @@ class UserProfileRepository {
         whereArgs: const [1],
       );
       await txn.delete('restructure_morning_answer');
+      await txn.delete('exploration_state');
       await txn.delete(
         'vacuum_focus_state',
         where: 'id = ?',
@@ -963,9 +1228,7 @@ class UserProfileRepository {
     final identityLine = identity.isEmpty
         ? '这一年还没有沉淀出明确身份快照。'
         : '这一年的身份锚点是：$identity';
-    final beliefLine = belief.isEmpty
-        ? '限制性信念还没有被单独归档。'
-        : '当年主要松动的旧信念是：$belief';
+    final beliefLine = belief.isEmpty ? '限制性信念还没有被单独归档。' : '当年记录的内部模式是：$belief';
     final stability = archive.checkinStability;
     final sampleCount = archive.sampleCount;
 
@@ -1010,6 +1273,9 @@ class UserProfileRepository {
       'identity_anchor',
       'user_profile',
       'action_feedback',
+      'exploration_state',
+      'morning_archive',
+      'action_change',
     ];
 
     for (final tableName in deleteOrder) {
@@ -1034,6 +1300,9 @@ class UserProfileRepository {
       'vacuum_focus_state',
       'yearly_archive',
       'action_feedback',
+      'exploration_state',
+      'morning_archive',
+      'action_change',
     ];
 
     for (final tableName in insertOrder) {

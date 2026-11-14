@@ -174,7 +174,7 @@ class _VacuumModePageState extends ConsumerState<VacuumModePage> {
                     _VacuumToggleCard(
                       title: '日间打断',
                       subtitle:
-                          '在 ${settings.interruptTimeList.join(' / ')} 提醒你停下来，用 3 分钟看清此刻的行为更靠近想成为的样子，还是更靠近旧有的模式。',
+                          '按 ${settings.interruptTimeList.join(' / ')} 安排提醒。这些是可调整的示例时点，花片刻回看实际行为；关闭通知后仍可手动记录。',
                       value: settings.interruptEnabled,
                       onChanged: _isSaving
                           ? null
@@ -417,6 +417,19 @@ class _VacuumInterruptTimesCard extends StatelessWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: current ?? const TimeOfDay(hour: 11, minute: 0),
+      // 对话框内部输入模式有硬编码的最小高度 216，而系统字号缩小时
+      // 对话框可用高度会被压到 216 以下（如 font_scale=0.85 时 252*0.85=214.2），
+      // 上下界反转触发 "BoxConstraints has non-normalized height constraints"。
+      // 这里把 textScaler 下限钳到 1，仅作用于该对话框，不影响页面其他文字。
+      builder: (context, child) {
+        final media = MediaQuery.of(context);
+        return MediaQuery(
+          data: media.copyWith(
+            textScaler: media.textScaler.clamp(minScaleFactor: 1),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked == null) {
       return;

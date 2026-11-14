@@ -161,3 +161,20 @@ CREATE INDEX idx_archive_year ON yearly_archive(archive_year);
 ✅ 预留支撑：周智能复盘SQL统计、年度对比报告、数据导出、白皮书生成
 
 ✅ 完全适配：防挫败机制、零删除、零清零、永久接续成长逻辑
+
+## 2026-11-14 当前实现补充（SQLite v13）
+
+上文是历史设计，实际结构以 `lib/src/data/database/app_database.dart` 为准。当前实现允许用户明确清空数据和恢复备份，不承诺零删除；每日校验允许修改当天记录。
+
+v12 保存观察问题上下文、反馈方向快照和当前晨稿开始时间。v13 新增：
+
+| 表／字段 | 用途与旧数据默认值 |
+|---|---|
+| `exploration_state.review_question_keys` | 当前待回看问题 key 的 JSON 数组，默认 `[]` |
+| `restructure_draft.current_step_id` | 恢复晚间步骤，默认 `anti`；未知步骤回到首步 |
+| `restructure_draft.change_reason` | 可选修改原因，默认空文本 |
+| `restructure_record.change_reason` | 正式方向调整原因，旧记录为空 |
+| `morning_archive` | `id`、可空 `started_at`、`archived_at`、`answers_json`、`review_keys_json`；独立原稿快照 |
+| `action_change` | `id`、`previous_action`、`new_action`、可空 `reason`、`created_at`；仅行动文本实际变化时写入 |
+
+开始新探索和恢复历史稿时，晨稿归档、当前稿替换与未提交晚间草稿清理在同一事务内执行。历史稿保留，已提交方向与观察、反馈不改动。所有新表和字段纳入 JSON 备份、恢复与明确清空流程；旧备份缺失字段时使用默认值，不补造原因或上下文。迁移测试覆盖真实 SQLite 结构夹具 v1–v12 升级。

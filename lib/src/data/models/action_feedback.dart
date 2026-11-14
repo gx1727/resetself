@@ -11,6 +11,7 @@ class ActionFeedback {
     required this.insight,
     required this.adjustment,
     required this.createdAt,
+    this.directionSnapshot,
   });
 
   final int id;
@@ -28,6 +29,7 @@ class ActionFeedback {
   final String adjustment;
 
   final DateTime createdAt;
+  final String? directionSnapshot;
 
   bool get hasAnyInput =>
       attempted.trim().isNotEmpty ||
@@ -43,6 +45,7 @@ class ActionFeedback {
       insight: map['insight'] as String? ?? '',
       adjustment: map['adjustment'] as String? ?? '',
       createdAt: _parseTimestamp(map['created_at']) ?? DateTime.now(),
+      directionSnapshot: map['direction_snapshot'] as String?,
     );
   }
 

@@ -12,6 +12,12 @@
         android:label="ResetSelf"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- 关闭 Impeller，Android 端回退 Skia。
+             部分华为机型的 Vulkan/Mali 驱动会让 Impeller 首帧卡死（白屏、0 帧），
+             Skia 后端正常。删掉此项或改为 true 即可恢复 Impeller。 -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

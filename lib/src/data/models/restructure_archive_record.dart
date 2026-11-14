@@ -15,6 +15,7 @@ class RestructureArchiveRecord {
     this.monthProject = '',
     this.constraints = '',
     this.valueConstraints = '',
+    this.changeReason = '',
   });
 
   final int id;
@@ -38,6 +39,7 @@ class RestructureArchiveRecord {
 
   /// 价值约束：为实现愿景不愿牺牲的边界。
   final String valueConstraints;
+  final String changeReason;
 
   factory RestructureArchiveRecord.fromMap(Map<String, Object?> map) {
     return RestructureArchiveRecord(
@@ -56,6 +58,7 @@ class RestructureArchiveRecord {
       monthProject: map['month_project'] as String? ?? '',
       constraints: map['constraints'] as String? ?? '',
       valueConstraints: map['value_constraints'] as String? ?? '',
+      changeReason: map['change_reason'] as String? ?? '',
     );
   }
 }
