@@ -1,6 +1,36 @@
-# ResetSelf
+<p align="center">
+  <img src="design/logo/png/resetself-mark-tile-512.png" width="96" alt="ResetSelf">
+</p>
 
-ResetSelf 帮助用户晨间探索生活方向、日间观察实际行为、晚间综合，并通过行动反馈继续调整。方法依据 Dan Koe 的文章；数字记录、跨日继续、最小启动行动与周回顾是产品适配或扩展。
+<h1 align="center">ResetSelf</h1>
+
+<p align="center"><b>不记录你坚持了多少天，只记录你没坚持下来的那些瞬间。</b></p>
+
+<p align="center">
+  <img src="doc/manual/images/s21_home_top.png" width="30%">
+  <img src="doc/manual/images/s09_morning_answered.png" width="30%">
+  <img src="doc/manual/images/s31_insights_cards.png" width="30%">
+</p>
+
+一个本地优先的 Android 应用：晨间用 14 个问题探索方向，日间观察真实行为，晚间综合成明天可以尝试的方向与最小启动行动。全程不打卡、不打分、不联网。
+
+方法依据 Dan Koe 的《How to fix your entire life in 1 day》；数字记录、跨日继续、最小启动行动与周回顾是产品适配或扩展。
+
+## 快速开始
+
+- **使用手册**：<https://gx1727.github.io/resetself/> —— 42 张实机截图 + 完整流程说明
+- **下载安装**：[Releases](https://github.com/gx1727/resetself/releases/latest) 中的 `app-release.apk`（Android，已签名）
+
+## 它做什么
+
+| 阶段 | 你会做什么 |
+| --- | --- |
+| 探索 | 晨间 14 个问题，写下「探索原稿」，不是一句结论 |
+| 观察 | 白天 6 个示例时点加 3 条追问，拿真实行为核对晨间的解释 |
+| 综合 | 晚间 11 步向导，整理成明天可以尝试的方向与最小启动行动 |
+| 接住与回流 | 随时可用的 SOS 急救；每日校验与行动反馈把结果沉淀成样本 |
+
+最后你看到的不是一个分数，而是最近 7 天你在哪儿反复偏离。
 
 ## 当前状态
 
